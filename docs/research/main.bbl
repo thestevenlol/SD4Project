@@ -1,0 +1,102 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{neystadt2009}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=693174a2d4c84f4906890b5389043b44}{%
+           family={Neystadt},
+           familyi={N\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{693174a2d4c84f4906890b5389043b44}
+      \strng{fullhash}{693174a2d4c84f4906890b5389043b44}
+      \strng{fullhashraw}{693174a2d4c84f4906890b5389043b44}
+      \strng{bibnamehash}{693174a2d4c84f4906890b5389043b44}
+      \strng{authorbibnamehash}{693174a2d4c84f4906890b5389043b44}
+      \strng{authornamehash}{693174a2d4c84f4906890b5389043b44}
+      \strng{authorfullhash}{693174a2d4c84f4906890b5389043b44}
+      \strng{authorfullhashraw}{693174a2d4c84f4906890b5389043b44}
+      \field{sortinit}{N}
+      \field{sortinithash}{22369a73d5f88983a108b63f07f37084}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{Microsoft Learn}
+      \field{note}{Available at: \url{https://learn.microsoft.com/en-us/previous-versions/software-testing/cc162782(v=msdn.10)?redirectedfrom=MSDN} (Accessed: 28 September 2024)}
+      \field{title}{Automated penetration testing with white-box fuzzing}
+      \field{year}{2009}
+    \endentry
+    \entry{8839290}{article}{}{}
+      \name{author}{5}{}{%
+        {{hash=edda245a65fd6d7537c1186d73dfbd81}{%
+           family={Pham},
+           familyi={P\bibinitperiod},
+           given={Van-Thuan},
+           giveni={V\bibinithyphendelim T\bibinitperiod}}}%
+        {{hash=37344062790e172bc8d157eb9a0df894}{%
+           family={Böhme},
+           familyi={B\bibinitperiod},
+           given={Marcel},
+           giveni={M\bibinitperiod}}}%
+        {{hash=ebc5d47a4dfe61f86b92a95696f40d5e}{%
+           family={Santosa},
+           familyi={S\bibinitperiod},
+           given={Andrew\bibnamedelima E.},
+           giveni={A\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+        {{hash=e8932af0f74077a137f1b422241f89e0}{%
+           family={Căciulescu},
+           familyi={C\bibinitperiod},
+           given={Alexandru\bibnamedelima Răzvan},
+           giveni={A\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=af7b2ce2f4ff45a09ca67d2ca0be4687}{%
+           family={Roychoudhury},
+           familyi={R\bibinitperiod},
+           given={Abhik},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{65aa63e0ce23ed8637bd25d7acf49919}
+      \strng{fullhash}{50a914bec5e7b02aff64827860d88cb5}
+      \strng{fullhashraw}{50a914bec5e7b02aff64827860d88cb5}
+      \strng{bibnamehash}{65aa63e0ce23ed8637bd25d7acf49919}
+      \strng{authorbibnamehash}{65aa63e0ce23ed8637bd25d7acf49919}
+      \strng{authornamehash}{65aa63e0ce23ed8637bd25d7acf49919}
+      \strng{authorfullhash}{50a914bec5e7b02aff64827860d88cb5}
+      \strng{authorfullhashraw}{50a914bec5e7b02aff64827860d88cb5}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{IEEE Transactions on Software Engineering}
+      \field{number}{9}
+      \field{title}{Smart Greybox Fuzzing}
+      \field{volume}{47}
+      \field{year}{2021}
+      \field{pages}{1980\bibrangedash 1997}
+      \range{pages}{18}
+      \verb{doi}
+      \verb 10.1109/TSE.2019.2941681
+      \endverb
+      \keyw{Fuzzing;Computer bugs;Libraries;Tools;Dictionaries;Open area test sites;Schedules;Vulnerability detection;smart fuzzing;automated testing;file format;grammar;input structure}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

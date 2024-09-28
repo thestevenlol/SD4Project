@@ -1,0 +1,55 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[style=numeric]{biblatex}
+\addbibresource{refs.bib}
+
+\title{Fuzzer Research}
+\author{Jack Foley}
+\date{\today}
+
+\begin{document}
+
+\pagenumbering{gobble}
+\maketitle
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+
+\clearpage
+\pagenumbering{arabic}
+\section{Introduction}
+This document will outline the research done to start the work on the 4th Software Development Final Year Project (FYP). This project was created by Dr. Chris Meudec and is based on the idea of creating a fuzzer for the C programming language.
+
+\section{Fuzzing}
+Fuzzing is a method of testing software by using broken, random or usual data as an input into the software
+which is being tested. The idea of fuzzing is that it will find bugs and other issues that traditional 
+software testing methods, such as unit testing, will not find as easily. There are some different types of 
+fuzzing, such as white-box, grey-box and black-box fuzzing. There are also different approaches, dumb fuzzing 
+or smart fuzzing.
+
+\subsection{White-box Fuzzing}
+White-box fuzzing, also known as smart fuzzing, is a technique that is used to identify flaws such as memory 
+spikes and leaks (temporary denial-of-service), buffer overruns (remote code execution), unhandled exceptions, 
+read access violations (AVs), and thread hangs (permanent denial-of-service). 
+\cite{neystadt2009}
+
+\subsection{Black-box Fuzzing}
+
+\subsection{Grey-box Fuzzing}
+Grey-box fuzzing is a well-known and commonly used fuzzing technique that is used for testing software and 
+finding vulnerabilities. Differing from white-box fuzzing, which can suffer from high computational needs since
+source code analysis is required, grey-box fuzzing is a very good middle-ground between white-box and black-box
+fuzzing.
+\cite{8839290}
+
+\clearpage
+\printbibliography
+
+\end{document}
