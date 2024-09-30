@@ -19,6 +19,91 @@
 
 \refsection{0}
   \datalist[entry]{nty/global//global/global/global}
+    \entry{ALSAEDI202210068}{article}{}{}
+      \name{author}{3}{}{%
+        {{hash=a7013b5c91d7ed7177d0b1f1cb53f52f}{%
+           family={Alsaedi},
+           familyi={A\bibinitperiod},
+           given={Aseel},
+           giveni={A\bibinitperiod}}}%
+        {{hash=3486e1955915606f4b163b4574b6b1aa}{%
+           family={Alhuzali},
+           familyi={A\bibinitperiod},
+           given={Abeer},
+           giveni={A\bibinitperiod}}}%
+        {{hash=7de75446a66790345cc722ed6d91b749}{%
+           family={Bamasag},
+           familyi={B\bibinitperiod},
+           given={Omaimah},
+           giveni={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{fullhash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{fullhashraw}{6436e480d621d91e9d9a412185d3e851}
+      \strng{bibnamehash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{authorbibnamehash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{authornamehash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{authorfullhash}{6436e480d621d91e9d9a412185d3e851}
+      \strng{authorfullhashraw}{6436e480d621d91e9d9a412185d3e851}
+      \field{sortinit}{A}
+      \field{sortinithash}{2f401846e2029bad6b3ecc16d50031e2}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Web applications’ security is critical because we share sensitive data through them frequently, which attracts attackers who exploit their vulnerabilities. Detecting and exploiting such vulnerabilities automatically is challenging because of the applications’ increasing complexity and strong dependence upon dynamic features such as JavaScript. In this paper, we propose an approach that addresses the difficulties presented in web applications by using dynamic analysis techniques in a black-box fashion to explore applications’ space. It also performs a client-side validation analysis to increase the coverage and therefore, identify more vulnerabilities. We implemented our approach with a tool and evaluated its effectiveness using real-world web applications. Our system discovered 207 unique URLs, submitted 102 web forms successfully, and exploited 32 vulnerabilities automatically. A detailed comparison of state-of-the-art black-box fuzzing approaches showed that our system exceeds them in coverage, the number of vulnerabilities detected, and performance.}
+      \field{issn}{1319-1578}
+      \field{journaltitle}{Journal of King Saud University - Computer and Information Sciences}
+      \field{number}{10, Part B}
+      \field{title}{Effective and scalable black-box fuzzing approach for modern web applications}
+      \field{volume}{34}
+      \field{year}{2022}
+      \field{pages}{10068\bibrangedash 10078}
+      \range{pages}{11}
+      \verb{doi}
+      \verb https://doi.org/10.1016/j.jksuci.2022.10.006
+      \endverb
+      \verb{urlraw}
+      \verb https://www.sciencedirect.com/science/article/pii/S1319157822003573
+      \endverb
+      \verb{url}
+      \verb https://www.sciencedirect.com/science/article/pii/S1319157822003573
+      \endverb
+      \keyw{Black-box fuzzing,Web application security,Dynamic features,Vulnerability analysis,Dynamic analysis,Constraint solving}
+    \endentry
+    \entry{Blackwell2024-ao}{article}{}{}
+      \name{author}{2}{}{%
+        {{hash=593b98dc42e631f686334146782f0805}{%
+           family={Blackwell},
+           familyi={B\bibinitperiod},
+           given={Daniel},
+           giveni={D\bibinitperiod}}}%
+        {{hash=355a2475c7fc9d908d2f12f0736f0217}{%
+           family={Clark},
+           familyi={C\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+      }
+      \strng{namehash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{fullhash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{fullhashraw}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{bibnamehash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{authorbibnamehash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{authornamehash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{authorfullhash}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \strng{authorfullhashraw}{284daa0afb8f967bf4ff0c90f6afe2ed}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{In this paper, we introduce an approach for improving the early exploration of grey-box fuzzing campaigns; allowing the fuzzer to reach the interesting coverage earlier. To do this, it leverages information from the system under test's (SUT's) control flow graph in order to decide which inputs are likely to lead to discovering most coverage when mutated.}
+      \field{eprintclass}{cs.SE}
+      \field{eprinttype}{arXiv}
+      \field{month}{4}
+      \field{title}{{PrescientFuzz}: A more effective exploration approach for grey-box fuzzing}
+      \field{year}{2024}
+      \verb{eprint}
+      \verb 2404.18887
+      \endverb
+    \endentry
     \entry{neystadt2009}{misc}{}{}
       \name{author}{1}{}{%
         {{hash=693174a2d4c84f4906890b5389043b44}{%
