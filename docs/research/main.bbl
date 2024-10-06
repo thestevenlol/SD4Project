@@ -181,6 +181,34 @@
       \endverb
       \keyw{Fuzzing;Computer bugs;Libraries;Tools;Dictionaries;Open area test sites;Schedules;Vulnerability detection;smart fuzzing;automated testing;file format;grammar;input structure}
     \endentry
+    \entry{enwiki:1249540069}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=b6aea1a416c89509a7df1cbb69249cb6}{%
+           family={{Wikipedia contributors}},
+           familyi={W\bibinitperiod}}}%
+      }
+      \strng{namehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{fullhash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{fullhashraw}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{bibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authorbibnamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authornamehash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authorfullhash}{b6aea1a416c89509a7df1cbb69249cb6}
+      \strng{authorfullhashraw}{b6aea1a416c89509a7df1cbb69249cb6}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{[Online; accessed 6-October-2024]}
+      \field{title}{Fuzzing --- {Wikipedia}{,} The Free Encyclopedia}
+      \field{year}{2024}
+      \verb{urlraw}
+      \verb https://en.wikipedia.org/w/index.php?title=Fuzzing&oldid=1249540069
+      \endverb
+      \verb{url}
+      \verb https://en.wikipedia.org/w/index.php?title=Fuzzing&oldid=1249540069
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput
