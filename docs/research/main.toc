@@ -6,3 +6,7 @@
 \contentsline {section}{\numberline {3}Techniques Deep Dive}{2}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Random Input Fuzzing}{2}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Mutation Based Fuzzing}{2}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Benchmarking Overview}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Competitions}{3}{subsection.4.1}%
+\contentsline {subsubsection}{\numberline {4.1.1}Test-Comp}{3}{subsubsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.2}SV-Comp}{3}{subsubsection.4.1.2}%

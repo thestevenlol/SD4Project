@@ -10,6 +10,7 @@
 \usepackage{wrapfig}
 \graphicspath{ {./images/} }
 \usepackage[hidelinks]{hyperref}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue}
 \usepackage[style=numeric]{biblatex}
 \addbibresource{refs.bib}
 
@@ -86,8 +87,6 @@ Examples of random fuzzing would be:
     *&322h2k,b&(Gb2\|q&@ih
 \end{BVerbatim}
 
-
-
 \subsection{Mutation Based Fuzzing}
 Instead of generating completely random strings, we can use mutation based fuzzing. Most randomly generated inputs are always invalid, which is not ideal. 
 Mutation Fuzzing will take a valid input at first, then with each subsequent execution, it will change, or mutate, the string slightly. This mutation is usually done 
@@ -103,6 +102,20 @@ Examples of mutation fuzzing would be:
     \item \dots
     \item \textbf{Mutated Input N:} \texttt{Fr'1?.tOP4+}
 \end{itemize}
+
+\section{Benchmarking Overview}
+\subsection{Competitions}
+\subsubsection{Test-Comp}
+\hyperlink{https://test-comp.sosy-lab.org/2024/}{Test-Comp} \dots TODO
+
+\subsubsection{SV-Comp}
+\hyperlink{https://sv-comp.sosy-lab.org/}{SV-Comp} (SVC) is a software verification benchmark website. It runs an annual competition to test various different
+software verification tools which can be used in the software development lifecycle. It is mostly used to prove the correctness of a software verification tool
+while following formal specifications, but it seems that there is some fuzzers used in the competition.
+
+SVC does not seem like it will be a good candidate for testing the fuzzer as it is mostly used for the testing of verification tools, not fuzzers. A better 
+alternative is \hyperlink{https://test-comp.sosy-lab.org/2024/}{Test-Comp}, a software testing competition that is run by the same people who run SVC, but has a 
+higher focus on software testing tools, including fuzzers, rather than software verification tools.
 
 \newpage
 
