@@ -2,9 +2,11 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
+\usepackage{listings}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{fancyvrb}
 \usepackage{wrapfig}
 \graphicspath{ {./images/} }
 \usepackage[hidelinks]{hyperref}
@@ -14,6 +16,7 @@
 \title{Fuzzer Research}
 \author{Jack Foley}
 \date{\today}
+\emergencystretch=1em
 
 \begin{document}
 
@@ -29,18 +32,19 @@
 \pagenumbering{arabic}
 
 \section{Introduction}
-This document will outline the research done to start the work on the 4th Software Development Final Year Project (FYP). This project was created by Dr. Chris Meudec and is based on the idea of creating a fuzzer for the C programming language.
+This document will outline the research undertaken for the 4th Software Development Final Year Project (FYP). 
+This project was proposed by Dr. Chris Meudec and focuses developing a fuzzer for the C programming language.
 
 \section{Fuzzing}
 
 
 Fuzzing is a method of testing software by using broken, random or unusual data as an input 
 into the software which is being tested. The idea of fuzzing is that it will find bugs and 
-other issues, such as memory spikes and leaks (temporary denial-of-service), buffer overruns 
+other issues, including memory spikes and leaks (temporary denial-of-service), buffer overruns 
 (remote code execution), unhandled exceptions, read access violations (AVs), and thread 
 hangs (permanent denial-of-service). These are issues that traditional software testing 
 methods, such as unit testing, will not find as easily. There are some different types of 
-fuzzing, such as white-box, grey-box and black-box fuzzing \cite{neystadt2009}.
+fuzzing, such as White-Box, grey-box and black-box fuzzing \cite{neystadt2009}.
 
 \begin{wrapfigure}{r}{0.5\textwidth} %this figure will be at the right
     \centering
@@ -52,25 +56,53 @@ During typical use of a fuzzer, the fuzzer will use structured data as its input
 structure that the fuzzer will use is normally already defined via "a file format or 
 protocol" \cite{enwiki:1249540069} which in turn can be used to determine a correct input
 from an incorrect input. The fuzzer will create cases that are considered 
-'correct enough' so that the software will not reject it, but also 'incorrect enough' so 
+"correct enough" so that the software will not reject it, but also "incorrect enough" so 
 that "corner cases" \cite{enwiki:1249540069} can be found.
 
 
-\subsection{White-box Fuzzing}
-White-box fuzzing, also known as smart fuzzing, is a technique that is used where the fuzzer is fully aware of the code structure and input variables. White-box fuzzing can lead to discovering bugs more quickly compared to grey-box and black-box fuzzing, but it can also be more computationally expensive as it needs to do an analysis of the codebase before running. 
+\subsection{White-Box Fuzzing}
+White-Box fuzzing, also known as smart fuzzing, is a technique that is used where the fuzzer is fully aware of the code structure and input variables. White-Box fuzzing often leads to discovering bugs more quickly compared to grey-box and black-box fuzzing, but it can also be more computationally expensive as it needs to do an analysis of the codebase before running. 
 
-A case study done during development of ISA Server 2006 showed that one defect was found per 17 KLOC (thousand lines of code), a similar black-box fuzzer only found 30\% of the defects that the white-box fuzzer found \cite{neystadt2009}.
+A case study done during development of ISA Server 2006 showed that one defect was found per 17 KLOC (thousand lines of code), a similar black-box fuzzer only found 30\% of the defects that the White-Box fuzzer found \cite{neystadt2009}.
 
-\subsection{Black-box Fuzzing}
-Black-box fuzzing is a technique used to test software, analyzing the software by sending random data to the software to discover an application's bugs and vulnerabilities. The black-box fuzzer does not have any information about the inner-workings of the software, it only knows the input and output of the software.
+\subsection{Black-Box Fuzzing}
+Black-Box fuzzing is a technique used to test software, analyzing the software by sending random data to the software to discover an application's bugs and vulnerabilities. The black-box fuzzer does not have any information about the inner-workings of the software, it only knows the input and output of the software.
 
 
 It is a sought-after testing technique as it will work it applications regardless of the programming language or the platform that the software is running on \cite{ALSAEDI202210068}.
 
-\subsection{Grey-box Fuzzing}
-Grey-box fuzzing is a well-known and commonly used fuzzing technique that is used for testing software and finding vulnerabilities. Differing from white-box fuzzing, which can suffer from high computational needs since source code analysis is required, grey-box fuzzing is a very good middle-ground between white-box and black-box fuzzing.\cite{8839290} 
+\subsection{Grey-Box Fuzzing}
+Grey-Box fuzzing is a well-known and commonly used fuzzing technique that is used for testing software and finding vulnerabilities. Differing from White-Box fuzzing, which can suffer from high computational needs since source code analysis is required, grey-box fuzzing is a very good middle-ground between White-Box and black-box fuzzing.\cite{8839290} 
 
-Grey-box fuzzing can also receive coverage feedback from the software, which can then be used to more efficiently traverse the software's codebase to find bugs and vulnerabilities  \cite{Blackwell2024-ao}.
+Grey-Box fuzzing can also receive coverage feedback from the software, which can then be used to more efficiently traverse the software's codebase to find bugs and vulnerabilities  \cite{Blackwell2024-ao}.
+
+\section{Techniques Deep Dive}
+\subsection{Random Input Fuzzing}
+The simplest implementation of a Fuzzer is a Random Fuzzer. This type of Fuzzer will generate a random string at a fixed or variable length which will then be used 
+as the input for the software which we are testing. This method works well at producing errors, but may struggle at producing inputs that \textbf{do not} cause errors \cite{fuzzingbook2024:Fuzzer:RandomInputs}. 
+
+Examples of random fuzzing would be:
+\begin{BVerbatim}
+    *&322h2k,b&(Gb2\|q&@ih
+\end{BVerbatim}
+
+
+
+\subsection{Mutation Based Fuzzing}
+Instead of generating completely random strings, we can use mutation based fuzzing. Most randomly generated inputs are always invalid, which is not ideal. 
+Mutation Fuzzing will take a valid input at first, then with each subsequent execution, it will change, or mutate, the string slightly. This mutation is usually done 
+by modifying one random character in the input. This approach is popular with fuzzing as it may cause the program to crash while only changing the input slightly, 
+which is difficult to achieve with traditional testing \cite{fuzzingbook2023:MutationFuzzer}.
+
+Examples of mutation fuzzing would be:
+\begin{itemize}
+    \item \textbf{Original Input:} \texttt{Hello World}
+    \item \textbf{Mutated Input 1:} \texttt{Hello Wzrld}
+    \item \textbf{Mutated Input 2:} \texttt{Hell1 Wzrld}
+    \item \textbf{Mutated Input 3:} \texttt{H;ll1 Wzrld}
+    \item \dots
+    \item \textbf{Mutated Input N:} \texttt{Fr'1?.tOP4+}
+\end{itemize}
 
 \newpage
 

@@ -2381,6 +2381,8 @@
     <bcf:citekey order="8" intorder="1">ALSAEDI202210068</bcf:citekey>
     <bcf:citekey order="9" intorder="1">8839290</bcf:citekey>
     <bcf:citekey order="10" intorder="1">Blackwell2024-ao</bcf:citekey>
+    <bcf:citekey order="11" intorder="1">fuzzingbook2024:Fuzzer:RandomInputs</bcf:citekey>
+    <bcf:citekey order="12" intorder="1">fuzzingbook2023:MutationFuzzer</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="nty">

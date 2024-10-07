@@ -209,6 +209,120 @@
       \verb https://en.wikipedia.org/w/index.php?title=Fuzzing&oldid=1249540069
       \endverb
     \endentry
+    \entry{fuzzingbook2024:Fuzzer:RandomInputs}{incollection}{}{}
+      \name{author}{5}{}{%
+        {{hash=5e1cda0c07dec7bd29209963590efad4}{%
+           family={Zeller},
+           familyi={Z\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod}}}%
+        {{hash=421f701ed4ed770219168b6f80719917}{%
+           family={Gopinath},
+           familyi={G\bibinitperiod},
+           given={Rahul},
+           giveni={R\bibinitperiod}}}%
+        {{hash=37344062790e172bc8d157eb9a0df894}{%
+           family={Böhme},
+           familyi={B\bibinitperiod},
+           given={Marcel},
+           giveni={M\bibinitperiod}}}%
+        {{hash=fc66f39b83d69c05a49d023f90b98586}{%
+           family={Fraser},
+           familyi={F\bibinitperiod},
+           given={Gordon},
+           giveni={G\bibinitperiod}}}%
+        {{hash=bf6ba08576ee94137912e417e3a91a8b}{%
+           family={Holler},
+           familyi={H\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {CISPA Helmholtz Center for Information Security}%
+      }
+      \strng{namehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{fullhash}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{fullhashraw}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{bibnamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authorbibnamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authornamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authorfullhash}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{authorfullhashraw}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \field{extraname}{1}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{The Fuzzing Book}
+      \field{howpublished}{\url{https://www.fuzzingbook.org/html/Fuzzer.html}}
+      \field{note}{Retrieved 2024-06-29 17:55:20+02:00}
+      \field{title}{Fuzzing: Breaking Things with Random Inputs}
+      \field{year}{2024}
+      \verb{urlraw}
+      \verb https://www.fuzzingbook.org/html/Fuzzer.html
+      \endverb
+      \verb{url}
+      \verb https://www.fuzzingbook.org/html/Fuzzer.html
+      \endverb
+      \warn{\item incollection entry 'fuzzingbook2024:Fuzzer:RandomInputs' (refs.bib): Invalid format '2024-06-29 17:55:20+02:00' of date field 'urldate' - ignoring}
+    \endentry
+    \entry{fuzzingbook2023:MutationFuzzer}{incollection}{}{}
+      \name{author}{5}{}{%
+        {{hash=5e1cda0c07dec7bd29209963590efad4}{%
+           family={Zeller},
+           familyi={Z\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod}}}%
+        {{hash=421f701ed4ed770219168b6f80719917}{%
+           family={Gopinath},
+           familyi={G\bibinitperiod},
+           given={Rahul},
+           giveni={R\bibinitperiod}}}%
+        {{hash=37344062790e172bc8d157eb9a0df894}{%
+           family={Böhme},
+           familyi={B\bibinitperiod},
+           given={Marcel},
+           giveni={M\bibinitperiod}}}%
+        {{hash=fc66f39b83d69c05a49d023f90b98586}{%
+           family={Fraser},
+           familyi={F\bibinitperiod},
+           given={Gordon},
+           giveni={G\bibinitperiod}}}%
+        {{hash=bf6ba08576ee94137912e417e3a91a8b}{%
+           family={Holler},
+           familyi={H\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {CISPA Helmholtz Center for Information Security}%
+      }
+      \strng{namehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{fullhash}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{fullhashraw}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{bibnamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authorbibnamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authornamehash}{bbde14bd15ef8817e033ba77c3750f3e}
+      \strng{authorfullhash}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \strng{authorfullhashraw}{4ec2e6da99bff5a7f8589fd0a913a09a}
+      \field{extraname}{2}
+      \field{sortinit}{Z}
+      \field{sortinithash}{96892c0b0a36bb8557c40c49813d48b3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{The Fuzzing Book}
+      \field{howpublished}{\url{https://www.fuzzingbook.org/html/MutationFuzzer.html}}
+      \field{note}{Retrieved 2023-11-11 18:18:06+01:00}
+      \field{title}{Mutation-Based Fuzzing}
+      \field{year}{2023}
+      \verb{urlraw}
+      \verb https://www.fuzzingbook.org/html/MutationFuzzer.html
+      \endverb
+      \verb{url}
+      \verb https://www.fuzzingbook.org/html/MutationFuzzer.html
+      \endverb
+      \warn{\item incollection entry 'fuzzingbook2023:MutationFuzzer' (refs.bib): Invalid format '2023-11-11 18:18:06+01:00' of date field 'urldate' - ignoring}
+    \endentry
   \enddatalist
 \endrefsection
 \endinput
