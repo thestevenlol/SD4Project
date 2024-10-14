@@ -1,5 +1,6 @@
 #ifndef SIGNALS_H
 #define SIGNALS_H
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +11,14 @@
 #include "uthash.h"
 
 #define BACKTRACE_SIZE 16
+
+/* 
+
+Sources: 
+- https://en.wikipedia.org/wiki/C_signal_handling
+- https://hondu.co/blog/backtraces-in-c
+
+ */
 
 // Define a struct for the hash table entry
 struct signal_map
@@ -64,13 +73,17 @@ void segfault_handler(int signal, siginfo_t *info, void *context) {
         printf("Caught SIGSEGV: Segmentation fault at address %p\n", faulting_address);
     }
 
-    // Generate the backtrace
+    // Generate the backtrace - needs more investigation...
     void *buffer[BACKTRACE_SIZE];
     int nptrs = backtrace(buffer, BACKTRACE_SIZE);
 
-    // Print the backtrace
-    printf("Backtrace (most recent call first):\n");
-    backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO);
+    char **strs = backtrace_symbols(buffer, nptrs);
+    for (int i = 0; i < nptrs; i++)
+    {
+        puts(strs[i]);
+    }
+    
+    free(strs);
 
     // Exit the program after handling the fault
     exit(signal);

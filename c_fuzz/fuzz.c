@@ -4,7 +4,7 @@
 #include "headers/signals.h"
 
 char *generate_random_string(int length) {
-    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'#,./;[]{}()=+-_!\"£$\%^&*\\|<>@";
     char *random_string = NULL;
 
     if (length) {
@@ -19,4 +19,23 @@ char *generate_random_string(int length) {
     }
 
     return random_string;
+}
+
+char *generate_mutated_string(char *string, int length) {
+    char *mutated_string = NULL;
+
+    if (string && length) {
+        mutated_string = malloc(length + 1);
+        if (mutated_string) {
+            strcpy(mutated_string, string);
+            int index = rand() % length;
+            char new_char;
+            do {
+                new_char = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[rand() % 62];
+            } while (new_char == string[index]);
+            mutated_string[index] = new_char;
+        }
+    }
+
+    return mutated_string;
 }
