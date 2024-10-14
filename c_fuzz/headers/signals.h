@@ -5,7 +5,11 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <ucontext.h>
+#include <execinfo.h>
+#include <unistd.h>
 #include "uthash.h"
+
+#define BACKTRACE_SIZE 16
 
 // Define a struct for the hash table entry
 struct signal_map
@@ -55,10 +59,18 @@ void segfault_handler(int signal, siginfo_t *info, void *context) {
 
     // Print the faulting address
     if (faulting_address == NULL) {
-        printf("Caught SIGSEGV: Segmentation fault at a NULL address\n");
+        printf("Caught SIGSEGV: Segmentation fault at a NULL address. Trying to dereference a NULL pointer?\n");
     } else {
         printf("Caught SIGSEGV: Segmentation fault at address %p\n", faulting_address);
     }
+
+    // Generate the backtrace
+    void *buffer[BACKTRACE_SIZE];
+    int nptrs = backtrace(buffer, BACKTRACE_SIZE);
+
+    // Print the backtrace
+    printf("Backtrace (most recent call first):\n");
+    backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO);
 
     // Exit the program after handling the fault
     exit(signal);
