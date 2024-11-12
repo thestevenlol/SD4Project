@@ -1674,14 +1674,12 @@ int main()
 {
     // default output
     int output = -1;
-	int index = 0;
     // main i/o-loop
     while(1)
     {
         // read input
         int input;
         input = __VERIFIER_nondet_int();
-		printf("Input %d: %d\n", index, input);
         if ((input != 1) && (input != 2) && (input != 3) && (input != 4) && (input != 5) && (input != 6)) return -2;
 
         // operate eca engine

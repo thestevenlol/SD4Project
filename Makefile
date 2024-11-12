@@ -1,10 +1,11 @@
 CC = gcc
-CFLAGS = -D_POSIX_C_SOURCE=199309L -g -rdynamic
+CFLAGS = -D_POSIX_C_SOURCE=199309L -g -rdynamic -fsanitize=undefined,address -O1
 TARGET = main
 
 all: $(TARGET)
 
 $(TARGET): main.c
 	$(CC) $(CFLAGS) -o $(TARGET) main.c
+
 clean:
 	rm -f $(TARGET) *.o

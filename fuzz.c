@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
+
 #include "headers/signals.h"
 #include "headers/fuzztype.h"
 
@@ -19,7 +21,10 @@ char *generateRandomString(int length) {
 
     // Handle zero length
     if (length == 0) {
-        return strdup("random string backup!");
+        random_string = malloc(22); // Length of backup string + 1 for null terminator.
+        if (!random_string) return NULL;
+        strcpy(random_string, "random string backup!");
+        return random_string;
     }
 
     // Allocate memory
