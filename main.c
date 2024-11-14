@@ -66,12 +66,15 @@ int complexOperation(char* input, int flag, float multiplier) {
         result += (int)temp;
     }
 
-    // Branch 3: Pattern matching with bounds checking
+    // Branch 3: Pattern matching with bug
     if (flag & 0x04) {
+        char small_buffer[8];  // Small buffer
+        strcpy(small_buffer, input);  // Buffer overflow when input > 7 chars
+        
         int consecutive = 0;
-        size_t len = strlen(input);
-        for (int i = 1; i < len; i++) {  // Start from 1 to safely check previous char
-            if (input[i] == input[i-1]) {
+        size_t len = strlen(small_buffer);
+        for (int i = 1; i < len; i++) { 
+            if (small_buffer[i] == small_buffer[i-1]) {
                 consecutive++;
                 if (consecutive > 2) {
                     result *= 2;
@@ -114,7 +117,6 @@ int main(int argc, char **argv) {
         free(input);
         iteration++;
     }
-    
 
     return 0;
 }
