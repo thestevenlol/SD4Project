@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
 
         int result = complexOperation(input, mask, multiplier);
-        if (iteration % 1000000 == 0) {
+        if (iteration % 10000 == 0) {
             printf("Iteration #%d\nMask: %d\nMultiplier: %d\nInput: %s\nResult: %d\n\n", iteration, mask, multiplier, input, result);
         }
 

@@ -7,6 +7,7 @@
 #include "headers/fuzztype.h"
 
 int generateRandomNumber(const int min, const int max) {
+    srand(time(NULL));
     return min + rand() % (max - min + 1);
 }
 
@@ -177,4 +178,8 @@ char *removeCharFromString(char *string, int length) {
     removed_string[length - 1] = '\0';
 
     return removed_string;
+}
+
+int __VERIFIER_nondet_int() {
+    return generateRandomNumber(1,5);
 }
