@@ -1,7 +1,0 @@
-[Sun Dec  1 17:54:37 2024] Attempting to generate lexer
-[Sun Dec  1 17:54:37 2024] flex flex.l
-
-[Sun Dec  1 17:54:37 2024] gcc lex.yy.c -o scanner -lfl
-
-[Sun Dec  1 17:54:37 2024] Lexer generated successfully
-[Sun Dec  1 17:54:37 2024] Lexical analysis completed successfully
