@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <time.h>
+#include <limits.h>
 
 #define MAX_CMD_LENGTH 100
 #define OUTPUT_FILE "inputs.txt"
@@ -30,6 +31,8 @@ static void log_message(const char *message) {
 }
 
 /**
+ * @brief 
+ * 
  * Generates lexical analyzer using flex
  * @return ERR_SUCCESS on success, error code on failure
  */
@@ -101,4 +104,80 @@ int lexScanFile(const char *filename) {
 
     log_message("Lexical analysis completed successfully");
     return ERR_SUCCESS;
+}
+
+/* Structure to hold the min/max results */
+struct InputRange {
+    int min;
+    int max;
+    int count;  // Number of comparisons found
+    int valid;  // Flag indicating if values were found
+};
+
+/**
+ * Extracts minimum and maximum values from input comparisons
+ * @param filename The file containing lexer output
+ * @return InputRange struct with results
+ */
+struct InputRange extractInputRange(const char *filename) {
+    struct InputRange result = {
+        .min = INT_MAX,
+        .max = INT_MIN,
+        .count = 0,
+        .valid = 0
+    };
+    
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        log_message("Failed to open file for input range extraction");
+        return result;
+    }
+
+    char line[1024];
+    while (fgets(line, sizeof(line), fp)) {
+        if (strstr(line, "input != ")) {
+            char *ptr = strstr(line, "input != ");
+            ptr += strlen("input != ");
+            
+            int value;
+            if (sscanf(ptr, "%d", &value) == 1) {
+                result.min = (value < result.min) ? value : result.min;
+                result.max = (value > result.max) ? value : result.max;
+                result.count++;
+                result.valid = 1;
+            }
+        }
+    }
+
+    fclose(fp);
+    
+    char logMsg[100];
+    snprintf(logMsg, sizeof(logMsg), 
+             "Extracted input range: min=%d, max=%d, count=%d",
+             result.min, result.max, result.count);
+    log_message(logMsg);
+    
+    return result;
+}
+
+int main() {
+    int seed = time(NULL);
+    srand(seed);
+
+    if (generateLexer() != ERR_SUCCESS) {
+        return 1;
+    }
+
+    if (lexScanFile("problems/Problem13.c") != ERR_SUCCESS) {
+        return 1;
+    }
+
+    struct InputRange range = extractInputRange(OUTPUT_FILE);
+    if (!range.valid) {
+        return 1;
+    }
+
+    printf("Input range: [%d, %d]\n", range.min, range.max);
+
+    return 0;
 }
