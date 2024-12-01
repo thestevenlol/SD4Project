@@ -58,6 +58,7 @@ char* get_full_path(const char* file_path) {
     return full_path;
 }
 
+
 char* get_current_time() {
     time_t now = time(NULL);
     if (now == -1) {
