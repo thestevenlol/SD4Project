@@ -7,7 +7,8 @@
         "signals.h": "c",
         "fuzzer.h": "c",
         "stdlib.h": "c",
-        "testcase.h": "c"
+        "testcase.h": "c",
+        "io.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

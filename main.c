@@ -16,15 +16,7 @@ int main(int argc, char* argv[]) {
     char* base = strrchr(filepath, '/');
     char* filename = base ? base + 1 : filename;
     
-    if (!createTestSuiteFolder(filename)) {
-        fprintf(stderr, "Failed to create test suite directory\n");
-        return 1;
-    }
-
-    if (!createMetadataFile(fullPath, filename)) {
-        fprintf(stderr, "Failed to create metadata file\n");
-        return 1;
-    }
+    createTestSuiteAndMetadata(fullPath, filename);
 
     free(fullPath);
 
