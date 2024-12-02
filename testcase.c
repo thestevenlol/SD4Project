@@ -8,30 +8,11 @@
 
 #define PATH_MAX 4096
 
+static int test_counter = 1;
+
 /**
- * Creates a test suite directory and its associated metadata file.
+ * @brief 
  * 
- * @param fullPath The complete path to the source file
- * @param filename The name of the file for which the test suite is being created
- * @return int Returns 0 on success, 1 if either the directory or metadata file creation fails
- *
- * This function performs two main operations:
- * 1. Creates a test suite directory using the provided filename
- * 2. Generates a metadata file within that directory containing test suite information
- */
-int createTestSuiteAndMetadata(const char* fullPath, const char* filename) {
-    if (!createTestSuiteFolder(filename)) {
-        fprintf(stderr, "Failed to create test suite directory\n");
-        return 1;
-    }
-
-    if (!createMetadataFile(fullPath, filename)) {
-        fprintf(stderr, "Failed to create metadata file\n");
-        return 1;
-    }
-}
-
-/**
  * Creates a test suite directory structure
  * @param filename Base filename used to name the test suite
  * @return 1 on success, 0 on failure
@@ -93,5 +74,81 @@ int createMetadataFile(const char* filePath, const char* filename) {
     fprintf(file, "</test-metadata>\n");
     
     fclose(file);
+    return 1;
+}
+
+/**
+ * Creates a test suite directory and its associated metadata file.
+ * 
+ * @param fullPath The complete path to the source file
+ * @param filename The name of the file for which the test suite is being created
+ * @return int Returns 0 on success, 1 if either the directory or metadata file creation fails
+ *
+ * This function performs two main operations:
+ * 1. Creates a test suite directory using the provided filename
+ * 2. Generates a metadata file within that directory containing test suite information
+ */
+int createTestSuiteAndMetadata(const char* fullPath, const char* filename) {
+    if (!createTestSuiteFolder(filename)) {
+        fprintf(stderr, "Failed to create test suite directory\n");
+        return 1;
+    }
+
+    if (!createMetadataFile(fullPath, filename)) {
+        fprintf(stderr, "Failed to create metadata file\n");
+        return 1;
+    }
+}
+
+/**
+ * Ensures test suite directory structure exists
+ * @param test_suite Name of test suite
+ * @return 1 on success, 0 on failure
+ */
+static int ensureTestSuiteDirs(const char* test_suite) {
+    // Create base test-suites directory if needed
+    if (mkdir("test-suites", 0777) == -1 && errno != EEXIST) {
+        fprintf(stderr, "Failed to create test-suites dir: %s\n", strerror(errno));
+        return 0;
+    }
+    
+    // Create specific test suite directory if needed
+    char suite_path[PATH_MAX];
+    snprintf(suite_path, PATH_MAX, "test-suites/%s-test-suite", test_suite);
+    if (mkdir(suite_path, 0777) == -1 && errno != EEXIST) {
+        fprintf(stderr, "Failed to create test suite dir: %s\n", strerror(errno));
+        return 0;
+    }
+    
+    return 1;
+}
+
+int createTestInputFile(const int* inputs, size_t num_inputs, const char* test_suite) {
+    if (!inputs || !test_suite) return 0;
+    
+    // Ensure directories exist
+    if (!ensureTestSuiteDirs(test_suite)) {
+        return 0;
+    }
+    
+    char filepath[PATH_MAX];
+    snprintf(filepath, PATH_MAX, "test-suites/%s-test-suite/test_input-%d.xml", 
+             test_suite, test_counter);
+    
+    FILE* file = fopen(filepath, "w");
+    if (!file) {
+        fprintf(stderr, "Failed to create file %s: %s\n", 
+                filepath, strerror(errno));
+        return 0;
+    }
+    
+    fprintf(file, "<testcase>\n");
+    for (size_t i = 0; i < num_inputs; i++) {
+        fprintf(file, "\t<input>%d</input>\n", inputs[i]);
+    }
+    fprintf(file, "</testcase>\n");
+    
+    fclose(file);
+    test_counter++;
     return 1;
 }

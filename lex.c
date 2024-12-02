@@ -6,17 +6,7 @@
 #include <time.h>
 #include <limits.h>
 
-#define MAX_CMD_LENGTH 100
-#define OUTPUT_FILE "inputs.txt"
-#define LOG_FILE "lex.log"
-
-/* Error codes */
-#define ERR_SUCCESS 0
-#define ERR_NULL_INPUT -1
-#define ERR_FILE_NOT_FOUND -2
-#define ERR_COMMAND_TOO_LONG -3
-#define ERR_EXECUTION_FAILED -4
-#define ERR_PIPE_FAILED -5
+#include "headers/lex.h"
 
 /* Logging function */
 static void log_message(const char *message) {
@@ -105,14 +95,6 @@ int lexScanFile(const char *filename) {
     log_message("Lexical analysis completed successfully");
     return ERR_SUCCESS;
 }
-
-/* Structure to hold the min/max results */
-struct InputRange {
-    int min;
-    int max;
-    int count;  // Number of comparisons found
-    int valid;  // Flag indicating if values were found
-};
 
 /**
  * Extracts minimum and maximum values from input comparisons
