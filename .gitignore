@@ -54,3 +54,4 @@ dkms.conf
 # Other files
 inputs.txt
 lex.log
+test-suites/

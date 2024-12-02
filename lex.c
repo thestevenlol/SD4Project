@@ -160,24 +160,24 @@ struct InputRange extractInputRange(const char *filename) {
     return result;
 }
 
-int main() {
-    int seed = time(NULL);
-    srand(seed);
+// int main() {
+//     int seed = time(NULL);
+//     srand(seed);
 
-    if (generateLexer() != ERR_SUCCESS) {
-        return 1;
-    }
+//     if (generateLexer() != ERR_SUCCESS) {
+//         return 1;
+//     }
 
-    if (lexScanFile("problems/Problem13.c") != ERR_SUCCESS) {
-        return 1;
-    }
+//     if (lexScanFile("problems/Problem13.c") != ERR_SUCCESS) {
+//         return 1;
+//     }
 
-    struct InputRange range = extractInputRange(OUTPUT_FILE);
-    if (!range.valid) {
-        return 1;
-    }
+//     struct InputRange range = extractInputRange(OUTPUT_FILE);
+//     if (!range.valid) {
+//         return 1;
+//     }
 
-    printf("Input range: [%d, %d]\n", range.min, range.max);
+//     printf("Input range: [%d, %d]\n", range.min, range.max);
 
-    return 0;
-}
+//     return 0;
+// }
