@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "headers/hash.h"
 #include "headers/testcase.h"
 #include "headers/io.h"
 
