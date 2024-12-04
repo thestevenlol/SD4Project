@@ -55,3 +55,6 @@ dkms.conf
 inputs.txt
 lex.log
 test-suites/
+output/**/*
+*.gcov
+testcov.log

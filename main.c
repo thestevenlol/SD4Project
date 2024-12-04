@@ -6,6 +6,10 @@
 #include "headers/testcase.h"
 #include "headers/io.h"
 #include "headers/lex.h"
+#include "fuzz.c"
+
+#define BATCH_SIZE 1000000
+#define N_TESTS 20
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -20,21 +24,7 @@ int main(int argc, char* argv[]) {
     
     createTestSuiteAndMetadata(fullPath, filename);
 
-    int inputs[][4] = {
-        {2, 9, 3, 3},
-        {2, 4, 3, 3},
-        {2, 4, 3, 3},
-        {5, 8, 4, 6}
-    };
-
-    for (size_t i = 0; i < 4; i++)
-    {
-        if (!createTestInputFile(inputs[i], 4, filename)) {
-            fprintf(stderr, "Failed to create test input file\n");
-            return 1;
-        }
-    }
-
+    // Lexical analysis
     int seed = time(NULL);
     srand(seed);
 
@@ -42,7 +32,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lexScanFile("problems/Problem13.c") != ERR_SUCCESS) {
+    if (lexScanFile(fullPath) != ERR_SUCCESS) {
         return 1;
     }
 
@@ -53,8 +43,25 @@ int main(int argc, char* argv[]) {
 
     printf("Input range: [%d, %d]\n", range.min, range.max);
 
+    // Free memory. not needed anymore
     free(fullPath);
 
+    int counter = 0;
+    int inputs[BATCH_SIZE];
+    int batch_count = 0;
+    char* hash = getHash(filename);
+
+    for (int i = 0; i < BATCH_SIZE * N_TESTS; i++) {
+        counter++;
+        inputs[batch_count++] = generateRandomNumber(range.min, range.max);
+        
+        if (batch_count == BATCH_SIZE) {
+            createTestInputFile(inputs, batch_count, filename);
+            batch_count = 0;
+        }
+    }
+
+    free(hash);
     return 0;
     
 }

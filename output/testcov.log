@@ -1,7 +1,17 @@
-2024-12-02 10:47:20 ERROR    Test-suite metadata not valid
-2024-12-02 10:52:50 ERROR    Test-suite metadata not valid
-2024-12-02 10:56:20 ERROR    Test-suite metadata not valid
-2024-12-02 10:57:11 ERROR    Test-suite metadata not valid
-2024-12-02 10:57:41 WARNING  No test case in exchange format found in 'test-suites/Problem13.c-test-suite.zip'
-2024-12-02 10:58:25 WARNING  No test case in exchange format found in 'test-suites/Problem13.c-test-suite.zip'
-2024-12-02 10:58:45 WARNING  No test case in exchange format found in 'test-suites/Problem13.c-test-suite.zip'
+2024-12-04 21:15:45 WARNING  Couldn't parse file test_input-239.xml: no element found: line 1, column 0
+2024-12-04 21:15:46 INFO     GCov coverage could not be computed: No GCOV data file with known name found in directory: ['Problem10.c.gcov', 'harness.c.gcov', 'fuzz.c', '.gitignore', 'zip-test-suite.sh', 'scanner', 'hash.sh', 'test-suites', 'lex.c', 'output', 'flex.l', 'docs', 'testcase.c', 'problems', '.vscode', 'main.c', 'io.c', 'lex.yy.c', 'inputs.txt', 'README.md', '.git', 'test-suite-sample.zip', 'lex.log', 'headers', 'main.o', 'Makefile']
+2024-12-04 21:15:46 INFO     GCov coverage could not be computed: No GCOV data file with known name found in directory: ['Problem10.c.gcov', 'harness.c.gcov', 'fuzz.c', '.gitignore', 'zip-test-suite.sh', 'scanner', 'hash.sh', 'test-suites', 'lex.c', 'output', 'flex.l', 'docs', 'testcase.c', 'problems', '.vscode', 'main.c', 'io.c', 'lex.yy.c', 'inputs.txt', 'README.md', '.git', 'test-suite-sample.zip', 'lex.log', 'headers', 'main.o', 'Makefile']
+2024-12-04 21:15:46 INFO     GCov coverage could not be computed: No GCOV data file with known name found in directory: ['Problem10.c.gcov', 'harness.c.gcov', 'fuzz.c', '.gitignore', 'zip-test-suite.sh', 'scanner', 'hash.sh', 'test-suites', 'lex.c', 'output', 'flex.l', 'docs', 'testcase.c', 'problems', '.vscode', 'main.c', 'io.c', 'lex.yy.c', 'inputs.txt', 'README.md', '.git', 'test-suite-sample.zip', 'lex.log', 'headers', 'main.o', 'Makefile']
+2024-12-04 21:15:46 INFO     GCov coverage could not be computed: No GCOV data file with known name found in directory: ['Problem10.c.gcov', 'harness.c.gcov', 'fuzz.c', '.gitignore', 'zip-test-suite.sh', 'scanner', 'hash.sh', 'test-suites', 'lex.c', 'output', 'flex.l', 'docs', 'testcase.c', 'problems', '.vscode', 'main.c', 'io.c', 'lex.yy.c', 'inputs.txt', 'README.md', '.git', 'test-suite-sample.zip', 'lex.log', 'headers', 'main.o', 'Makefile']
+2024-12-04 21:15:51 INFO     Execution interrupted by user
+2024-12-04 21:16:00 WARNING  Couldn't parse file test_input-239.xml: no element found: line 1, column 0
+2024-12-04 21:16:01 INFO     Execution interrupted by user
+2024-12-04 21:16:20 WARNING  Couldn't parse file test_input-239.xml: no element found: line 1, column 0
+2024-12-04 21:17:34 INFO     Execution interrupted by user
+2024-12-04 21:17:36 INFO     Execution interrupted by user
+2024-12-04 21:19:54 ERROR    [Errno 21] Is a directory: 'test-suites/Problem10.c-test-suite'
+2024-12-04 21:19:54 INFO     Test suites are expected as ZIP files. Try to zip the test-suite directory and provide the result as test suite
+2024-12-04 21:20:10 INFO     Execution interrupted by user
+2024-12-04 21:21:00 INFO     Execution interrupted by user
+2024-12-04 21:21:15 INFO     Execution interrupted by user
+2024-12-04 21:21:22 INFO     Execution interrupted by user

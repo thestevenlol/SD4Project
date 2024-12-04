@@ -100,6 +100,8 @@ int createMetadataFile(const char* filePath, const char* filename) {
     }
     
     // Write metadata content
+    fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+    fprintf(file, "<!DOCTYPE test-metadata PUBLIC \"+//IDN sosy-lab.org//DTD test-format test-metadata 1.1//EN\" \"https://sosy-lab.org/test-format/test-metadata-1.1.dtd\">\n");
     fprintf(file, "<test-metadata>\n");
     fprintf(file, "\t<sourcecodelang>C</sourcecodelang>\n");
     fprintf(file, "\t<producer>Fuzzer</producer>\n");
@@ -182,6 +184,8 @@ int createTestInputFile(const int* inputs, size_t num_inputs, const char* test_s
         return 0;
     }
     
+    fprintf(file, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n");
+    fprintf(file, "<!DOCTYPE testcase PUBLIC \"+//IDN sosy-lab.org//DTD test-format testcase 1.1//EN\" \"https://sosy-lab.org/test-format/testcase-1.1.dtd\">\n");
     fprintf(file, "<testcase>\n");
     for (size_t i = 0; i < num_inputs; i++) {
         fprintf(file, "\t<input>%d</input>\n", inputs[i]);

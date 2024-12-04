@@ -6,8 +6,22 @@
 #include "headers/signals.h"
 #include "headers/fuzztype.h"
 
+static unsigned int counter = 0;
+
 int generateRandomNumber(const int min, const int max) {
-    srand(time(NULL));
+    // Increment counter each call
+    counter++;
+    
+    // Mix time and counter for more entropy
+    unsigned int seed = time(NULL) ^ (counter << 16);
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        // Mix in nanoseconds
+        seed ^= ts.tv_nsec;
+    }
+    
+    // Use seed to generate number
+    srand(seed);
     return min + rand() % (max - min + 1);
 }
 
