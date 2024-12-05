@@ -4,11 +4,18 @@
 #include <string.h>
 
 #include "headers/signals.h"
-#include "headers/fuzztype.h"
+#include "headers/fuzz.h"
+#include "headers/range.h"
 
 static unsigned int counter = 0;
 
-int generateRandomNumber(const int min, const int max) {
+int generateRandomNumber() {
+    // Validate ranges
+    if (maxRange <= minRange) {
+        printf("Error: Invalid range [%d,%d]\n", minRange, maxRange);
+        return 0;
+    }
+
     // Increment counter each call
     counter++;
     
@@ -22,7 +29,10 @@ int generateRandomNumber(const int min, const int max) {
     
     // Use seed to generate number
     srand(seed);
-    return min + rand() % (max - min + 1);
+    int range = maxRange - minRange + 1;
+    int result = minRange + (rand() % range);
+    
+    return result;
 }
 
 char *generateRandomString(int length) {
@@ -196,5 +206,5 @@ char *removeCharFromString(char *string, int length) {
 }
 
 int __VERIFIER_nondet_int() {
-    return generateRandomNumber(1,5);
+    return generateRandomNumber();
 }

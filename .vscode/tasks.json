@@ -9,9 +9,11 @@
                 "${workspaceFolder}/main.c",
                 "${workspaceFolder}/testcase.c",
                 "${workspaceFolder}/io.c",
+                "${workspaceFolder}/lex.c",
+                "${workspaceFolder}/fuzz.c",
                 "-I${workspaceFolder}/headers",
                 "-o",
-                "${workspaceFolder}/main"
+                "${workspaceFolder}/main.o"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

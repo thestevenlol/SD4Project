@@ -135,11 +135,13 @@ int createTestSuiteAndMetadata(const char* fullPath, const char* filename) {
         fprintf(stderr, "Failed to create test suite directory\n");
         return 1;
     }
+    printf("Test suite directory created\n");
 
     if (!createMetadataFile(fullPath, filename)) {
         fprintf(stderr, "Failed to create metadata file\n");
         return 1;
     }
+    printf("Metadata file created\n");
 }
 
 /**

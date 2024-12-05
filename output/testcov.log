@@ -15,3 +15,33 @@
 2024-12-04 21:21:00 INFO     Execution interrupted by user
 2024-12-04 21:21:15 INFO     Execution interrupted by user
 2024-12-04 21:21:22 INFO     Execution interrupted by user
+2024-12-05 13:14:58 ERROR    [Errno 21] Is a directory: 'test-suites/Problem10.c-test-suite'
+2024-12-05 13:14:58 INFO     Test suites are expected as ZIP files. Try to zip the test-suite directory and provide the result as test suite
+2024-12-05 13:15:03 ERROR    [Errno 2] No such file or directory: 'clang-tidy'
+2024-12-05 13:15:26 ERROR    [Errno 2] No such file or directory: 'clang-tidy'
+2024-12-05 13:15:35 ERROR    Compilation failed for harness output/harness.c:
+    /usr/bin/ld: cannot find Scrt1.o: No such file or directory
+    /usr/bin/ld: cannot find crti.o: No such file or directory
+    /usr/bin/ld: skipping incompatible /usr/lib/x86_64-linux-gnu/libm.so when searching for -lm
+    /usr/bin/ld: skipping incompatible /usr/lib/x86_64-linux-gnu/libm.a when searching for -lm
+    /usr/bin/ld: cannot find -lm: No such file or directory
+    /usr/bin/ld: skipping incompatible /usr/lib/x86_64-linux-gnu/libm.so when searching for -lm
+    /usr/bin/ld: skipping incompatible /usr/lib/gcc/x86_64-linux-gnu/11/libgcov.a when searching for -lgcov
+    /usr/bin/ld: cannot find -lgcov: No such file or directory
+    /usr/bin/ld: skipping incompatible /usr/lib/gcc/x86_64-linux-gnu/11/libgcc.a when searching for -lgcc
+    /usr/bin/ld: cannot find -lgcc: No such file or directory
+    /usr/bin/ld: skipping incompatible /usr/lib/gcc/x86_64-linux-gnu/11/libgcc.a when searching for -lgcc
+    /usr/bin/ld: cannot find -lgcc: No such file or directory
+    collect2: error: ld returned 1 exit status
+    
+2024-12-05 13:17:01 INFO     Coverage computation failed. No coverage recorded for run test_input-1.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:01 INFO     Coverage computation failed. No coverage recorded for run test_input-10.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:01 INFO     Coverage computation failed. No coverage recorded for run test_input-2.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:01 INFO     Coverage computation failed. No coverage recorded for run test_input-3.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:01 INFO     Coverage computation failed. No coverage recorded for run test_input-4.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:02 INFO     Coverage computation failed. No coverage recorded for run test_input-5.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:02 INFO     Coverage computation failed. No coverage recorded for run test_input-6.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:02 INFO     Coverage computation failed. No coverage recorded for run test_input-7.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:02 INFO     Coverage computation failed. No coverage recorded for run test_input-8.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 13:17:02 INFO     Coverage computation failed. No coverage recorded for run test_input-9.xml. Reason is a missing file: [Errno 2] No such file or directory: 'lcov'
+2024-12-05 14:42:22 INFO     Execution interrupted by user

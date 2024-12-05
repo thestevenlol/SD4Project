@@ -1,16 +1,19 @@
 CC = gcc
-CFLAGS = -D_POSIX_C_SOURCE=199309L -g -rdynamic -fsanitize=undefined,address -O1
-TARGET = output.o
-SCANNER = scanner
+CFLAGS = -w
+
+SOURCES = main.c fuzz.c range.c lex.c io.c testcase.c target.c
+OBJECTS = $(SOURCES:.c=.o)
+TARGET = main
 
 all: $(TARGET)
 
-$(TARGET): main.c
-	$(CC) $(CFLAGS) -o $(TARGET) main.c
+$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
 
-flex: flex.l
-	flex flex.l
-	$(CC) lex.yy.c -o $(SCANNER) -lfl
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) $(SCANNER) *.o lex.yy.c
+	rm -f $(OBJECTS) $(TARGET)
+
+.PHONY: all clean

@@ -58,3 +58,4 @@ test-suites/
 output/**/*
 *.gcov
 testcov.log
+harness.c.gcov
