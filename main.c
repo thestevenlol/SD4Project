@@ -2,15 +2,15 @@
 #include <stdlib.h>
 #include <time.h>
 #include <libgen.h>
-#include "headers/fuzz.h"  // For minRange, maxRange
-#include "headers/lex.h"   // For lexer functions
-#include "headers/io.h"    // For file operations
-#include "headers/testcase.h"    // For file operations
-#include "headers/target.h"    // For file operations
+#include "headers/fuzz.h" 
+#include "headers/lex.h"   
+#include "headers/io.h"   
+#include "headers/testcase.h"    
+#include "headers/target.h" 
 #include "headers/range.h"
 
 #define BATCH_SIZE 100000
-#define N_TESTS 10
+#define N_TESTS 20
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
