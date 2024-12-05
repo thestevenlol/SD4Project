@@ -8,7 +8,10 @@
         "fuzzer.h": "c",
         "stdlib.h": "c",
         "testcase.h": "c",
-        "io.h": "c"
+        "io.h": "c",
+        "random": "c",
+        "limits": "c",
+        "algorithm": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

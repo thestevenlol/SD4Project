@@ -21,7 +21,8 @@ int main(int argc, char* argv[]) {
     char* fullPath = getFullPath(filepath);
     char* base = strrchr(filepath, '/');
     char* filename = base ? base + 1 : filename;
-    
+
+    compileTargetFile(fullPath);
     createTestSuiteAndMetadata(fullPath, filename);
 
     // Lexical analysis
@@ -42,18 +43,23 @@ int main(int argc, char* argv[]) {
     }
 
     printf("Input range: [%d, %d]\n", range.min, range.max);
+    minRange = range.min;
+    maxRange = range.max;
 
     // Free memory. not needed anymore
     free(fullPath);
 
     int counter = 0;
+    int input = 0;
     int inputs[BATCH_SIZE];
     int batch_count = 0;
     char* hash = getHash(filename);
 
     for (int i = 0; i < BATCH_SIZE * N_TESTS; i++) {
         counter++;
-        inputs[batch_count++] = generateRandomNumber(range.min, range.max);
+        input = generateRandomNumber();
+        inputs[batch_count++] = input;
+        executeTargetInt(input);
         
         if (batch_count == BATCH_SIZE) {
             createTestInputFile(inputs, batch_count, filename);
