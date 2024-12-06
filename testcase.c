@@ -68,8 +68,8 @@ char* getCurrentTime() {
              tm_info->tm_hour,
              tm_info->tm_min, 
              tm_info->tm_sec,
-             tm_info->tm_year + 1900);
-             
+                tm_info->tm_year + 1900);
+                
     return time_str;
 }
 
@@ -146,7 +146,7 @@ int createTestSuiteAndMetadata(const char* fullPath, const char* filename) {
  * @param test_suite Name of test suite
  * @return 1 on success, 0 on failure
  */
-static int ensureTestSuiteDirs(const char* test_suite) {
+static int ensureTestSuiteDirs(const char* testSuite) {
     // Create base test-suites directory if needed
     if (mkdir("test-suites", 0777) == -1 && errno != EEXIST) {
         fprintf(stderr, "Failed to create test-suites dir: %s\n", strerror(errno));
@@ -154,9 +154,9 @@ static int ensureTestSuiteDirs(const char* test_suite) {
     }
     
     // Create specific test suite directory if needed
-    char suite_path[PATH_MAX];
-    snprintf(suite_path, PATH_MAX, "test-suites/%s-test-suite", test_suite);
-    if (mkdir(suite_path, 0777) == -1 && errno != EEXIST) {
+    char suitePath[PATH_MAX];
+    snprintf(suitePath, PATH_MAX, "test-suites/%s-test-suite", testSuite);
+    if (mkdir(suitePath, 0777) == -1 && errno != EEXIST) {
         fprintf(stderr, "Failed to create test suite dir: %s\n", strerror(errno));
         return 0;
     }
