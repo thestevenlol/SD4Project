@@ -8,57 +8,41 @@ This project is a fuzzing tool written in the C Programming language. It uses th
 
 ## How to use
 
-To use the fuzzer tools, you **must** add `fuzz.c` and **all header files** into your project. You will then have access to the following fuzzing functions.
+Please note: You MUST run this on a UNIX system. It will not work if you do not have a UNIX system.
 
-```C
-char *generateRandomString(int length);
-char *generateMutatedString(char *str, int length, int seed);
-char *flipBitInString(char *string, int length);
-char *insertCharIntoString(char *string, int length, char character);
-char *removeCharFromString(char *string, int length);
-int generateRandomNumber(const int min, const int max);
+1. Ensure you have testcov installed.
+
+```
+see https://gitlab.com/sosy-lab/software/test-suite-validator
+Install gcc-multilib (Linux fedora):
+sudo apt install gcc glibc-devel.i686 libgcc.i686
+sudo apt install --fix-missing python3-pip
+git clone https://gitlab.com/sosy-lab/software/test-suite-validator.git TestCov
+cd TestCov
+pip install --break-system-packages . 
+pip3 install --break-system-packages --user matplotlib
+
+Check that testcov is installed by running: testcov
 ```
 
-### Example usage
+2. Ensure lcov is installed
 
-```C
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-
-#include "fuzz.c"
-
-// Function vulnerable to integer overflow
-int add_numbers(int a, int b) {
-    int result = a + b;
-    return result;
-}
-
-int main() {
-    // fuzzing loop, can be fixed or infinite.
-    int iteration = 1;
-    while (1) {
-        int a = generateRandomNumber(INT_MAX - 100, INT_MAX);
-        int b = generateRandomNumber(1, INT_MAX);
-        int result = add_numbers(a, b);
-        if (iteration % 100000 == 0) {
-            printf("Iteration #%d\nResult: %d\n\n", iteration, result);
-        }
-        iteration++;
-    }
-}
+```
+sudo apt install lcov
 ```
 
-It is vitally important to compile your code with the appropriate sanitizers. You should compile with the following command, where target.c is the name of your file(s): 
+3. Ensure flex is installed
 
-```shell
-gcc -D_POSIX_C_SOURCE=199309L -g -rdynamic -fsanitize=undefined,address -fno-sanitize-recover -O1 -o output.o target.c
+```
+sudo apt install flex
 ```
 
-> If you remove the `-fno-sanitize-recover` flag the program will keep running after finding an error.
+Finally, run the software by running the following commands.
 
-Then you can run in terminal with:
-
-```shell
-./output.o
 ```
+./main problems/Problem10.c
+./zip-test-suite.sh Problem10.c    
+testcov --no-isolation --test-suite test-suites/Problem10.c-test-suite.zip problems/Problem10.c  
+```
+
+This will create the test inputs for the problem file and then produce a coverage report on it.
