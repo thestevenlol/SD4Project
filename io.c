@@ -90,6 +90,17 @@ int createFolder(const char* basePath, const char* folderName) {
     return 1;
 }
 
+/**
+ * @brief Resolves the absolute path of a given file path.
+ *
+ * This function takes a relative or absolute file path and returns the
+ * absolute path. It uses the `realpath` function to resolve the path.
+ *
+ * @param filePath The relative or absolute file path to be resolved.
+ * @return A pointer to a string containing the absolute path, or NULL if
+ *         an error occurs. The caller is responsible for freeing the
+ *         returned string.
+ */
 char* getFullPath(const char* filePath) {
     char* resolved_path = (char*)malloc(PATH_MAX);
     if (resolved_path == NULL) {
@@ -104,6 +115,18 @@ char* getFullPath(const char* filePath) {
     return resolved_path;
 }
 
+
+/**
+ * @brief Generates the SHA-256 hash of a file.
+ *
+ * This function takes a file path as input, executes an external script to
+ * generate the SHA-256 hash of the file, and returns the hash as a string.
+ *
+ * @param filepath The path to the file for which the hash is to be generated.
+ * @return A dynamically allocated string containing the SHA-256 hash of the file,
+ *         or NULL if an error occurs. The caller is responsible for freeing the
+ *         returned string.
+ */
 char* getHash(const char* filepath) {
     if (!filepath) return NULL;
     

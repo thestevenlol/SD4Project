@@ -8,7 +8,18 @@
 
 #include "headers/lex.h"
 
-/* Logging function */
+/**
+ * Logs a message to a file with timestamp.
+ * 
+ * Opens the log file in append mode and writes the given message preceded 
+ * by a timestamp in the format [timestamp] message. The timestamp is 
+ * generated using the current system time.
+ *
+ * @param message The message string to be logged
+ * 
+ * Note: The function silently fails if the log file cannot be opened.
+ *       The LOG_FILE macro must be defined before using this function.
+ */
 static void log_message(const char *message) {
     FILE *log_fp = fopen(LOG_FILE, "a");
     if (log_fp) {
@@ -141,25 +152,3 @@ struct InputRange extractInputRange(const char *filename) {
     
     return result;
 }
-
-// int main() {
-//     int seed = time(NULL);
-//     srand(seed);
-
-//     if (generateLexer() != ERR_SUCCESS) {
-//         return 1;
-//     }
-
-//     if (lexScanFile("problems/Problem13.c") != ERR_SUCCESS) {
-//         return 1;
-//     }
-
-//     struct InputRange range = extractInputRange(OUTPUT_FILE);
-//     if (!range.valid) {
-//         return 1;
-//     }
-
-//     printf("Input range: [%d, %d]\n", range.min, range.max);
-
-//     return 0;
-// }

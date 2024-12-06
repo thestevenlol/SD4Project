@@ -13,11 +13,8 @@
 static int test_counter = 1;
 
 /**
- * @brief 
- * /**
- * @brief 
+ * @brief Creates a test suite directory structure
  * 
- * Creates a test suite directory structure
  * @param filename Base filename used to name the test suite
  * @return 1 on success, 0 on failure
  */
