@@ -12,7 +12,10 @@
         "random": "c",
         "limits": "c",
         "algorithm": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "target.h": "c",
+        "range.h": "c",
+        "generational.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

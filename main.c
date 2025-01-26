@@ -2,15 +2,20 @@
 #include <stdlib.h>
 #include <time.h>
 #include <libgen.h>
+#include <limits.h>
+
 #include "headers/fuzz.h" 
 #include "headers/lex.h"   
 #include "headers/io.h"   
 #include "headers/testcase.h"    
 #include "headers/target.h" 
 #include "headers/range.h"
+#include "headers/generational.h"
 
 #define BATCH_SIZE 100000
 #define N_TESTS 20
+
+
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -61,6 +66,41 @@ int main(int argc, char *argv[]) {
 
     free(fullPath);
 
+    // --- Generational Algorithm Implementation Starts Here ---
+
+    Individual population[POPULATION_SIZE];
+    Individual next_generation[POPULATION_SIZE];
+
+    // 1. Initialize Population
+    printf("Initializing population...\n");
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        population[i].input_value = generateRandomNumber();
+        population[i].fitness_score = 0.0; // Initialize fitness to 0
+    }
+
+    // 2. Generational Loop
+    for (int generation = 0; generation < NUM_GENERATIONS; generation++) {
+        printf("\n--- Generation %d ---\n", generation + 1); // Generation numbering starts from 1 for readability
+
+        // a) Evaluate Fitness (Placeholder for now)
+        printf("Evaluating fitness...\n");
+        for (int i = 0; i < POPULATION_SIZE; i++) {
+            // In the future, this is where you'd execute the target and get coverage.
+            // For now, using placeholder fitness.
+            population[i].fitness_score = calculatePlaceholderFitness(population[i].input_value, minRange, maxRange);
+            printf("  Input: %d, Placeholder Fitness: %f\n", population[i].input_value, population[i].fitness_score); // Debug print
+        }
+
+        // b) Generate New Population (Selection, Mutation)
+        printf("Generating new population...\n");
+        generateNewPopulation(population, POPULATION_SIZE, next_generation, minRange, maxRange);
+
+        // c) Replace current population with the new generation
+        memcpy(population, next_generation, sizeof(population));
+        printf("Population updated for next generation.\n");
+    }
+
+
     int counter = 0;
     int input = 0;
     int inputs[BATCH_SIZE];
@@ -83,5 +123,14 @@ int main(int argc, char *argv[]) {
     free(temp_path); // Free temporary buffer
     free(hash);
     printf("Test generation complete\n");
+
+    // Generational Related Code
+
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        population[i].input_value = generateRandomNumber();
+        population[i].fitness_score = 0.0; // Initialize fitness to 0
+    }
+
+
     return 0;
 }
