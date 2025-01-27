@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -w
 
-SOURCES = main.c fuzz.c range.c lex.c io.c testcase.c target.c generational.c
+SOURCES = main.c fuzz.c range.c lex.c io.c testcase.c target.c generational.c coverage.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET = main
 

@@ -11,6 +11,7 @@
 #include "headers/target.h" 
 #include "headers/range.h"
 #include "headers/generational.h"
+#include "headers/coverage.h"
 
 #define BATCH_SIZE 100000
 #define N_TESTS 20
@@ -131,6 +132,13 @@ int main(int argc, char *argv[]) {
         population[i].fitness_score = 0.0; // Initialize fitness to 0
     }
 
+    char* gcov_file = "instrumented_Problem10.c.gcov";
+    GcovCoverageData coverage = parseGcovFile("instrumented_Problem10.c.gcov");
+    printf("GCOV Coverage Report for: %s\n", gcov_file);
+    printf("\tExecuted Lines:\t\t%d\n", coverage.executed_lines);
+    printf("\tNot Executed Lines:\t%d\n", coverage.not_executed_lines);
+    printf("\tNon-Executable Lines:\t%d\n", coverage.non_executable_lines);
+    printf("\tTotal Lines:\t\t%d\n", coverage.total_lines);
 
     return 0;
 }

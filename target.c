@@ -9,7 +9,7 @@
 int compileTargetFile(const char* sourcePath) {
     char command[256];
     snprintf(command, sizeof(command), 
-             "gcc -o temp_executable \"%s\" -fPIC -w", sourcePath);
+             "gcc -o temp_executable \"%s\" -fPIC -w -lgcov", sourcePath);
     
     printf("Compiling: %s\n", command);
     return system(command);
