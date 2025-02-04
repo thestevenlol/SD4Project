@@ -6,12 +6,19 @@
 
 #include "headers/target.h"
 
-int compileTargetFile(const char* sourcePath) {
+int compileTargetFile(const char* sourcePath, const char* fileName) {
+    char fileNameNoExt[256];
+    strncpy(fileNameNoExt, fileName, sizeof(fileNameNoExt));
+    char* dot = strrchr(fileNameNoExt, '.');
+    if (dot != NULL) {
+        *dot = '\0';
+    }
+    
     char command[256];
     snprintf(command, sizeof(command), 
-             "gcc -o temp_executable \"%s\" -fPIC -w -lgcov", sourcePath);
+             "gcc --coverage -o \"%s\" \"%s\"", fileName, sourcePath);
     
-    printf("Compiling: %s\n", command);
+    printf("Compiling with coverage: %s\n", command);
     return system(command);
 }
 
