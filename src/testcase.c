@@ -139,6 +139,8 @@ int createTestSuiteAndMetadata(const char* fullPath, const char* filename) {
         return 1;
     }
     printf("Metadata file created\n");
+    
+    return 0;  // Return success
 }
 
 /**

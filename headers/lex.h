@@ -21,7 +21,6 @@ struct InputRange {
     int valid;  // Flag indicating if values were found
 };
 
-static void log_message(const char *message);
 int generateLexer();
 int lexScanFile(const char *filename);
 struct InputRange extractInputRange(const char *filename);

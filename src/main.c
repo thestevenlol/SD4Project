@@ -16,9 +16,6 @@
 #include "headers/coverage.h"
 #include "headers/logger.h"
 
-#define BATCH_SIZE 100000
-#define N_TESTS 20
-
 int main(int argc, char *argv[])
 {
     app_log(LOG_INFO, "Starting fuzzer application");
@@ -114,22 +111,27 @@ int main(int argc, char *argv[])
             app_log_with_value(LOG_DEBUG, "Evaluating individual:", "ID: %d, Value: %d", i, population[i].input_value);
             
             executeTargetInt(population[i].input_value);
-
+            
             char gcov_command[512];
-            // Fix: Use base_filename instead of fullPath for gcov
-            snprintf(gcov_command, sizeof(gcov_command), "gcov target.c");
+            // Run gcov on source.c in the coverage directory
+            snprintf(gcov_command, sizeof(gcov_command), 
+                    "cd coverage && gcov source.c");
             app_log_with_value(LOG_DEBUG, "Running gcov command:", "%s", gcov_command);
             
             system(gcov_command);
             
-            // Fix: Look for target.c.gcov instead of full path
-            FILE *test_fp = fopen("target.c.gcov", "r");
+            // Look for gcov output in coverage directory
+            char gcov_file[512];
+            snprintf(gcov_file, sizeof(gcov_file), "coverage/source.c.gcov");
+            
+            FILE *test_fp = fopen(gcov_file, "r");
             if (!test_fp) {
-                app_log_with_value(LOG_ERROR, "gcov file not found:", "File: target.c.gcov, Input: %d", population[i].input_value);
+                app_log_with_value(LOG_ERROR, "gcov file not found:", "File: %s, Input: %d", 
+                                 gcov_file, population[i].input_value);
                 population[i].fitness_score = 0.0;
             } else {
                 fclose(test_fp);
-                GcovCoverageData cov = parseGcovFile("target.c.gcov");
+                GcovCoverageData cov = parseGcovFile(gcov_file);
                 if (cov.executed_lines + cov.not_executed_lines > 0)
                     population[i].fitness_score = (double) cov.executed_lines / 
                         (cov.executed_lines + cov.not_executed_lines) * 100.0;
