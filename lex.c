@@ -7,6 +7,7 @@
 #include <limits.h>
 
 #include "headers/lex.h"
+#include "headers/logger.h"
 
 /**
  * Logs a message to a file with timestamp.
@@ -21,14 +22,7 @@
  *       The LOG_FILE macro must be defined before using this function.
  */
 static void log_message(const char *message) {
-    FILE *log_fp = fopen(LOG_FILE, "a");
-    if (log_fp) {
-        time_t now = time(NULL);
-        char *timestamp = ctime(&now);
-        timestamp[strlen(timestamp) - 1] = '\0';  // Remove newline
-        fprintf(log_fp, "[%s] %s\n", timestamp, message);
-        fclose(log_fp);
-    }
+    app_log(LOG_INFO, message);
 }
 
 /**

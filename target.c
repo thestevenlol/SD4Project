@@ -16,7 +16,7 @@ int compileTargetFile(const char* sourcePath, const char* fileName) {
     
     char command[256];
     snprintf(command, sizeof(command), 
-             "gcc --coverage -o \"%s\" \"%s\"", fileName, sourcePath);
+             "gcc --coverage -o \"%s\" fuzz.c range.c \"%s\"", fileName, sourcePath);
     
     printf("Compiling with coverage: %s\n", command);
     return system(command);

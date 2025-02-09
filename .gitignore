@@ -59,3 +59,5 @@ output/**/*
 *.gcov
 testcov.log
 harness.c.gcov
+*.gcda
+*.gcno
