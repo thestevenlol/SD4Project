@@ -6,8 +6,8 @@
 #include <time.h>
 #include <limits.h>
 
-#include "headers/lex.h"
-#include "headers/logger.h"
+#include "../headers/lex.h"
+#include "../headers/logger.h"
 
 /**
  * Logs a message to a file with timestamp.

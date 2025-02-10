@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "headers/generational.h"
+#include "../headers/generational.h"
 
 double calculatePlaceholderFitness(int input_value, int min_range, int max_range) {
     // Example: Higher fitness if input is further from the min/max boundaries

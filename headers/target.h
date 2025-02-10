@@ -1,8 +1,8 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-int compileTargetFile(const char* path, const char* fileName);
-int executeTargetInt(int input);
-void cleanupTarget(void);
+int compileTargetFile(const char* sourcePath, const char* fileName);
+int executeTargetInt(int input);  // Keep original signature to maintain compatibility
+void cleanupTarget();
 
 #endif

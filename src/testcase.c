@@ -5,8 +5,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "headers/io.h"
-#include "headers/testcase.h"
+#include "../headers/io.h"
+#include "../headers/testcase.h"
 
 #define PATH_MAX 4096
 

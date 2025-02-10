@@ -1,5 +1,5 @@
 
-#include "headers/range.h"
+#include "../headers/range.h"
 
-int minRange;
-int maxRange;
+int minRange = 0;
+int maxRange = 0;

@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
-#include "headers/logger.h"
+#include "../headers/logger.h"
 
 void app_log(const char* level, const char* message) {
     time_t now;

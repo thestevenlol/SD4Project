@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "headers/io.h"
+#include "../headers/io.h"
 
 #define PATH_MAX 4096
 

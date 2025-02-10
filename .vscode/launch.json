@@ -5,12 +5,14 @@
     "version": "2.0.0",
     "configurations": [
         {
-            "name": "C Debug",
+            "name": "Run and Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/main.o",
-            "args": ["problems/Problem10.c"],
-            "stopAtEntry": true,
+            "program": "${workspaceFolder}/main",
+            "args": [
+                "problems/Problem10.c"
+            ],
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
@@ -22,8 +24,14 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc build active file",
-            "miDebuggerPath": "/usr/bin/gdb"
+            "preLaunchTask": "build"
+        },
+    ],
+    "inputs": [
+        {
+            "type": "promptString",
+            "id": "programPath",
+            "description": "Enter the path to the program executable"
         }
     ],
     
