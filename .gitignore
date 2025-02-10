@@ -61,3 +61,5 @@ testcov.log
 harness.c.gcov
 *.gcda
 *.gcno
+.vscode
+.vscode
