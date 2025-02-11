@@ -13,9 +13,6 @@
 #include "headers/generational.h"
 #include "headers/coverage.h"
 
-#define BATCH_SIZE 100000
-#define N_TESTS 20
-
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -26,6 +23,11 @@ int main(int argc, char *argv[])
 
     const char *filename = argv[1];
     char *temp_path = strdup(filename);
+    if (!temp_path)
+    {
+        perror("Error duplicating filename");
+        return 1;
+    }
     const char *base_filename = basename(temp_path);
 
     char *fullPath = realpath(filename, NULL);
@@ -103,10 +105,8 @@ int main(int argc, char *argv[])
             // Build gcov command using the fullPath variable for source file
             char gcov_command[512];
             char gcov_output[512];  // Fixed: Changed from pointer to array
-            printf("\n\n================ MISERY ================\n\n");
             snprintf(gcov_command, sizeof(gcov_command), "gcov %s", fullPath);
             printf("Running gcov command... %s\n", gcov_command);
-            printf("\n\n================ MISERY ================\n\n");
 
             // todo: 
             // 1. Issue with min and max range not being passed to the target program
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
             system(gcov_command);
             
             // Check if gcov output file exists before parsing
-            snprintf(gcov_output, sizeof(gcov_output), "%s.gcov", fullPath);
+            snprintf(gcov_output, sizeof(gcov_output), "src/%s.gcov", base_filename);
             FILE *test_fp = fopen(gcov_output, "r");
             if (!test_fp) {
                 fprintf(stderr, "gcov file (%s) not found for input %d\n", gcov_output, population[i].input_value);

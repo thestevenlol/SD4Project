@@ -1,8 +1,8 @@
 #ifndef GENERATIONAL_H
 #define GENERATIONAL_H
 
-#define POPULATION_SIZE 10   
-#define NUM_GENERATIONS 2   
+#define POPULATION_SIZE 1
+#define NUM_GENERATIONS 1  
 #define MUTATION_RATE 0.8      // Probability of mutation (e.g., 80%)
 #define TOURNAMENT_SIZE 3
 
