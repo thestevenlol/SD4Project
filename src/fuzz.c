@@ -5,17 +5,29 @@
 
 #include "../headers/signals.h"
 #include "../headers/fuzz.h"
+#include "../headers/generational.h"
 #include "../headers/range.h"
 
 static unsigned int counter = 0;
 
+int generateSequence(int length) {
+    int sum = 0;
+    for (int i = 0; i < length; i++) {
+        sum += generateRandomNumber();
+        sum *= 10;
+    }
+    return sum;
+}
+
 int generateRandomNumber()
 {
-    if (maxRange <= minRange)
-    {
-        printf("Error: Invalid range [%d,%d]\n", minRange, maxRange);
-        return 0;
-    }
+    int minRange = 0;
+    int maxRange = 9;
+    // if (maxRange <= minRange)
+    // {
+    //     printf("Error: Invalid range [%d,%d]\n", minRange, maxRange);
+    //     return 0;
+    // }
 
     // Increment counter each call
     counter++;

@@ -8,6 +8,7 @@
 #include "../headers/range.h"
 
 int compileTargetFile(const char* sourcePath, const char* fileName) {
+    printf("Compiling target file: %s\n", sourcePath);
     char absolutePath[PATH_MAX];
     if (realpath(sourcePath, absolutePath) == NULL) {
         return 1;
@@ -32,10 +33,12 @@ int compileTargetFile(const char* sourcePath, const char* fileName) {
 
     // Compile everything together with coverage
     int result = system("gcc -c --coverage Problem10.c -o Problem10.o && "
-                       "gcc -o source Problem10.o ../src/fuzz.c ../src/range.c --coverage -lgcov");
+                       "gcc -o source Problem10.o ../src/fuzz.c ../src/generational.c ../src/range.c -g --coverage -lgcov");
     
     // Change back to original directory
     chdir("..");
+
+    printf("Compilation result: %d\n", result);
     return result;
 }
 
@@ -44,27 +47,47 @@ int executeTargetInt(int input) {
     // Save current directory
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        perror("Failed to get current directory");
         return -1;
     }
 
     // Change to coverage directory
     if (chdir("coverage") != 0) {
+        perror("Failed to change to coverage directory");
         return -1;
     }
 
-    // Execute the program with both input value and range values
-    char command[64];
-    snprintf(command, sizeof(command), "./source %d %d %d", input, minRange, maxRange);
+    // Check if the executable exists
+    if (access("./source", X_OK) != 0) {
+        perror("Executable 'source' not found or not executable");
+        chdir(cwd);
+        return -1;
+    }
+
+    // Execute the program with input value
+    char command[256];
+    snprintf(command, sizeof(command), "./source");
     printf("Executing: %s\n", command);
     
     // Run the program and generate coverage data
     int result = system(command);
-    
+    if (result == -1) {
+        perror("Failed to execute command");
+        chdir(cwd);
+        return -1;
+    }
+
     // Run gcov on the program
-    system("gcov Problem10.c");
+    if (system("gcov Problem10.c") != 0) {
+        fprintf(stderr, "Warning: gcov failed to generate coverage data\n");
+    }
 
     // Return to original directory
-    chdir(cwd);
+    if (chdir(cwd) != 0) {
+        perror("Failed to return to original directory");
+        return -1;
+    }
+
     return result;
 }
 

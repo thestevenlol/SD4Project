@@ -1,6 +1,36 @@
+#include <stdio.h>
 #include <stdlib.h>
-
 #include "../headers/generational.h"
+
+// Global population arrays
+Individual* population = NULL;
+Individual* next_generation = NULL;
+int populationIndex = 0;
+
+void initializePopulations(void) {
+    population = malloc(POPULATION_SIZE * sizeof(Individual));
+    next_generation = malloc(POPULATION_SIZE * sizeof(Individual));
+    
+    if (!population || !next_generation) {
+        fprintf(stderr, "Failed to allocate memory for populations\n");
+        exit(1);
+    }
+
+    populationIndex = 0;
+}
+
+int getNextPopulationIndex(Individual population[], int population_size, Individual next_generation[]) {
+    int index = populationIndex;
+    populationIndex = (populationIndex + 1) % population_size;
+    return index;
+}
+
+void cleanupPopulations(void) {
+    free(population);
+    free(next_generation);
+    population = NULL;
+    next_generation = NULL;
+}
 
 double calculatePlaceholderFitness(int input_value, int min_range, int max_range) {
     // Example: Higher fitness if input is further from the min/max boundaries
