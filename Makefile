@@ -3,11 +3,11 @@ CFLAGS = -g -Wall -fprofile-arcs -I.
 LDFLAGS = -lgcov
 
 SRC_DIR = src
-DEPS = headers/fuzz.h headers/lex.h headers/io.h headers/testcase.h headers/target.h headers/range.h headers/generational.h headers/coverage.h headers/logger.h headers/corpus.h
+DEPS = headers/fuzz.h headers/lex.h headers/io.h headers/testcase.h headers/target.h headers/range.h headers/generational.h headers/logger.h headers/corpus.h
 
 # Separate main.o from other object files since it's in root directory
 MAIN_OBJ = main.o
-OBJ = $(SRC_DIR)/fuzz.o $(SRC_DIR)/range.o $(SRC_DIR)/lex.o $(SRC_DIR)/io.o $(SRC_DIR)/testcase.o $(SRC_DIR)/target.o $(SRC_DIR)/generational.o $(SRC_DIR)/coverage.o $(SRC_DIR)/logger.o $(SRC_DIR)/corpus.o
+OBJ = $(SRC_DIR)/fuzz.o $(SRC_DIR)/range.o $(SRC_DIR)/lex.o $(SRC_DIR)/io.o $(SRC_DIR)/testcase.o $(SRC_DIR)/target.o $(SRC_DIR)/generational.o $(SRC_DIR)/logger.o $(SRC_DIR)/corpus.o
 
 all: main
 
