@@ -1,7 +1,7 @@
 #ifndef GENERATIONAL_H
 #define GENERATIONAL_H
 
-#define POPULATION_SIZE 50
+#define POPULATION_SIZE 100
 #define NUM_GENERATIONS 10
 #define MUTATION_RATE 0.8      // Probability of mutation (e.g., 80%)
 #define TOURNAMENT_SIZE 3
@@ -19,7 +19,7 @@ extern Individual* next_generation;
 double calculatePlaceholderFitness(int input_value, int min_range, int max_range);
 Individual selectParent(Individual population[], int population_size);
 int mutateInteger(int original_value, int min_range, int max_range);
-int getNextPopulationIndex(Individual population[], int population_size, Individual next_generation[]);
+int getNextPopulationIndex(int population_size);
 void generateNewPopulation(Individual population[], int population_size, Individual next_generation[], int min_range, int max_range);
 void initializePopulations(void);
 void cleanupPopulations(void);

@@ -21,7 +21,7 @@ int compileTargetFile(const char* sourcePath, const char* fileName) {
 
     // Copy the target program to coverage directory
     char copy_cmd[PATH_MAX * 2];
-    snprintf(copy_cmd, sizeof(copy_cmd), "cp \"%s\" coverage/Problem10.c", absolutePath);
+    snprintf(copy_cmd, sizeof(copy_cmd), "cp \"%s\" coverage/Problem.c", absolutePath);
     if (system(copy_cmd) != 0) {
         return 1;
     }
@@ -32,8 +32,8 @@ int compileTargetFile(const char* sourcePath, const char* fileName) {
     }
 
     // Compile everything together with coverage
-    int result = system("gcc -c --coverage Problem10.c -o Problem10.o && "
-                       "gcc -o source Problem10.o ../src/fuzz.c ../src/generational.c ../src/range.c -g --coverage -lgcov");
+    int result = system("gcc -c --coverage Problem.c -o Problem.o && "
+                       "gcc -o source Problem.o ../src/fuzz.c ../src/generational.c ../src/range.c -g --coverage -lgcov");
     
     // Change back to original directory
     chdir("..");
@@ -78,7 +78,7 @@ int executeTargetInt(int input) {
     }
 
     // Run gcov on the program
-    if (system("gcov Problem10.c") != 0) {
+    if (system("gcov Problem.c") != 0) {
         fprintf(stderr, "Warning: gcov failed to generate coverage data\n");
     }
 

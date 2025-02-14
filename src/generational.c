@@ -19,7 +19,7 @@ void initializePopulations(void) {
     populationIndex = 0;
 }
 
-int getNextPopulationIndex(Individual population[], int population_size, Individual next_generation[]) {
+int getNextPopulationIndex(int population_size) {
     int index = populationIndex;
     populationIndex = (populationIndex + 1) % population_size;
     return index;
