@@ -42,12 +42,6 @@ int main(int argc, char *argv[])
     printf("Filename: %s\n", filename);
     printf("Base filename: %s\n", base_filename);
     //createTestSuiteAndMetadata(fullPath, base_filename);
-    
-    if (createCorpus("corpus.txt") != 0)
-    {
-        printf("Failed to create corpus\n");
-        return 1;
-    }
 
     // Compile target with coverage enabled
     if (compileTargetFile(filename, base_filename) != 0) {
