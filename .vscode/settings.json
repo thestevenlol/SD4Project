@@ -15,7 +15,11 @@
         "stat.h": "c",
         "target.h": "c",
         "range.h": "c",
-        "generational.h": "c"
+        "generational.h": "c",
+        "corpus.h": "c",
+        "coverage.h": "c",
+        "wait.h": "c",
+        "fuzz.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/gcc"
 }

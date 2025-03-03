@@ -50,24 +50,31 @@ int executeTargetInt(int input) {
         perror("Failed to get current directory");
         return -1;
     }
-
+    
     // Change to coverage directory
     if (chdir("coverage") != 0) {
         perror("Failed to change to coverage directory");
         return -1;
     }
-
+    
     // Check if the executable exists
     if (access("./source", X_OK) != 0) {
         perror("Executable 'source' not found or not executable");
         chdir(cwd);
         return -1;
     }
-
+    
+    // Clean up existing gcda files before execution to reset coverage
+    system("rm -f *.gcda");
+    
+    // Set the input value as an environment variable
+    char env_var[32];
+    snprintf(env_var, sizeof(env_var), "TEST_INPUT=%d", input);
+    putenv(env_var);
+    
     // Execute the program with input value
     char command[256];
     snprintf(command, sizeof(command), "./source");
-    printf("Executing: %s\n", command);
     
     // Run the program and generate coverage data
     int result = system(command);
@@ -76,18 +83,18 @@ int executeTargetInt(int input) {
         chdir(cwd);
         return -1;
     }
-
-    // Run gcov on the program
-    if (system("gcov Problem.c") != 0) {
+    
+    // Run gcov on the program to generate fresh coverage data
+    if (system("gcov -b -c Problem.c > /dev/null 2>&1") != 0) {
         fprintf(stderr, "Warning: gcov failed to generate coverage data\n");
     }
-
+    
     // Return to original directory
     if (chdir(cwd) != 0) {
         perror("Failed to return to original directory");
         return -1;
     }
-
+    
     return result;
 }
 

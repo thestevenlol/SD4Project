@@ -1,19 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../headers/generational.h"
+#include "../headers/fuzz.h"
 
 // Global population arrays
 Individual* population = NULL;
 Individual* next_generation = NULL;
+coverage_t* global_coverage_map = NULL;
 int populationIndex = 0;
 
 void initializePopulations(void) {
     population = malloc(POPULATION_SIZE * sizeof(Individual));
     next_generation = malloc(POPULATION_SIZE * sizeof(Individual));
+    global_coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
     
-    if (!population || !next_generation) {
-        fprintf(stderr, "Failed to allocate memory for populations\n");
+    if (!population || !next_generation || !global_coverage_map) {
+        fprintf(stderr, "Failed to allocate memory for populations or coverage maps\n");
         exit(1);
+    }
+
+    // Initialize coverage maps for each individual
+    for (int i = 0; i < POPULATION_SIZE; i++) {
+        population[i].coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+        next_generation[i].coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+        
+        if (!population[i].coverage_map || !next_generation[i].coverage_map) {
+            fprintf(stderr, "Failed to allocate memory for individual coverage maps\n");
+            exit(1);
+        }
     }
 
     populationIndex = 0;
@@ -26,10 +41,82 @@ int getNextPopulationIndex(int population_size) {
 }
 
 void cleanupPopulations(void) {
-    free(population);
-    free(next_generation);
-    population = NULL;
-    next_generation = NULL;
+    if (population) {
+        for (int i = 0; i < POPULATION_SIZE; i++) {
+            free(population[i].coverage_map);
+        }
+        free(population);
+        population = NULL;
+    }
+    
+    if (next_generation) {
+        for (int i = 0; i < POPULATION_SIZE; i++) {
+            free(next_generation[i].coverage_map);
+        }
+        free(next_generation);
+        next_generation = NULL;
+    }
+    
+    free(global_coverage_map);
+    global_coverage_map = NULL;
+}
+
+void resetCoverageMap(coverage_t* map) {
+    memset(map, 0, COVERAGE_MAP_SIZE * sizeof(coverage_t));
+}
+
+// Reset the global coverage map
+void resetGlobalCoverageMap(void) {
+    if (global_coverage_map) {
+        memset(global_coverage_map, 0, COVERAGE_MAP_SIZE * sizeof(coverage_t));
+    }
+}
+
+int compareCoverageMaps(coverage_t* map1, coverage_t* map2) {
+    return memcmp(map1, map2, COVERAGE_MAP_SIZE * sizeof(coverage_t));
+}
+
+int hasNewCoverage(coverage_t* individual_map, coverage_t* global_map) {
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if ((individual_map[i] > 0) && (global_map[i] == 0)) {
+            return 1;  // Found new coverage
+        }
+    }
+    return 0;
+}
+
+void updateGlobalCoverage(coverage_t* individual_map) {
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (individual_map[i] > 0) {
+            global_coverage_map[i] = 1;  // Mark as covered in global map
+        }
+    }
+}
+
+// Replace placeholder fitness with coverage-based fitness
+double calculateCoverageFitness(coverage_t* coverage_map) {
+    // Count total edges covered
+    int covered_edges = 0;
+    int new_edges = 0;
+    
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (coverage_map[i] > 0) {
+            covered_edges++;
+            if (global_coverage_map[i] == 0) {
+                new_edges++;
+            }
+        }
+    }
+    
+    // Base fitness on coverage with bonus for new edges
+    double fitness = (double)covered_edges;
+    
+    // Heavily reward new edge discovery
+    if (new_edges > 0) {
+        fitness += new_edges * 10.0;  // Bonus for new edges
+    }
+    
+    return fitness;
 }
 
 double calculatePlaceholderFitness(int input_value, int min_range, int max_range) {
@@ -60,23 +147,14 @@ Individual selectParent(Individual population[], int population_size) {
     return best_individual; // Return the fittest individual from the tournament
 }
 
-int mutateInteger(int original_value, int min_range, int max_range) {
-    // Example mutation: Add or subtract a small random value
-    int mutation_amount = (rand() % 10) - 5; // Random value between -5 and 4
-    int mutated_value = original_value + mutation_amount;
-
-    // Ensure mutated value stays within range (you might need to adjust range enforcement)
-    if (mutated_value < min_range) mutated_value = min_range;
-    if (mutated_value > max_range) mutated_value = max_range;
-
-    return mutated_value;
-}
-
 void generateNewPopulation(Individual population[], int population_size, Individual next_generation[], int min_range, int max_range) {
     for (int i = 0; i < population_size; i++) {
         Individual parent = selectParent(population, population_size); // Select a parent
 
         next_generation[i] = parent; // Start with parent's genes (input value and fitness)
+
+        // Reset coverage map for the new individual
+        resetCoverageMap(next_generation[i].coverage_map);
 
         if ((double)rand() / RAND_MAX < MUTATION_RATE) {
             // Apply mutation with a certain probability
