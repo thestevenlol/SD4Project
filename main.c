@@ -22,7 +22,7 @@
 #define PROGRESS_FILE "fuzzing_progress.csv"
 
 // Function to perform random fuzzing without coverage guidance
-void randomFuzzing(int iterations, int min_range, int max_range) {
+void randomFuzzing(int iterations, int min_range, int max_range, char* filename) {
     printf("\n=== Starting random fuzzing (no coverage guidance) ===\n");
     
     FILE *progress_file = fopen(PROGRESS_FILE, "w");
@@ -45,7 +45,7 @@ void randomFuzzing(int iterations, int min_range, int max_range) {
         __coverage_reset();
         
         // Execute with the random input
-        executeTargetInt(random_input);
+        executeTargetInt(random_input, filename);
         
         // Track if we found new coverage
         if (hasNewCoverage(__coverage_map, baseline_coverage)) {
@@ -81,7 +81,7 @@ void randomFuzzing(int iterations, int min_range, int max_range) {
 }
 
 // Function to perform grey box fuzzing with coverage guidance
-void greyBoxFuzzing(int iterations, int min_range, int max_range) {
+void greyBoxFuzzing(int iterations, int min_range, int max_range, char* filename) {
     FILE *progress_file = fopen(PROGRESS_FILE, "w");
     if (progress_file) {
         fprintf(progress_file, "Iteration,Coverage,Mode\n");
@@ -108,7 +108,7 @@ void greyBoxFuzzing(int iterations, int min_range, int max_range) {
         resetCoverageMap(population[i].coverage_map);
         
         // Execute target and collect coverage
-        executeTargetInt(population[i].input_value);
+        executeTargetInt(population[i].input_value, filename);
         
         // Copy coverage data from __coverage_map to individual's coverage map
         if (__coverage_map) {
@@ -182,7 +182,7 @@ void greyBoxFuzzing(int iterations, int min_range, int max_range) {
                 resetCoverageMap(next_generation[i].coverage_map);
                 
                 // Execute with the mutated input
-                executeTargetInt(next_generation[i].input_value);
+                executeTargetInt(next_generation[i].input_value, filename);
                 
                 // Copy coverage data
                 if (__coverage_map) {
@@ -226,7 +226,7 @@ void greyBoxFuzzing(int iterations, int min_range, int max_range) {
                 int child_input = crossover(entry1->input_value, entry2->input_value);
                 
                 // Execute with crossover result
-                executeTargetInt(child_input);
+                executeTargetInt(child_input, filename);
                 
                 // Check if the crossover produced interesting results
                 coverage_t* child_coverage = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
@@ -257,7 +257,7 @@ void greyBoxFuzzing(int iterations, int min_range, int max_range) {
                 int havoc_input = mutateHavoc(entry->input_value);
                 
                 // Execute with havoc result
-                executeTargetInt(havoc_input);
+                executeTargetInt(havoc_input, filename);
                 
                 // Check if the havoc produced interesting results
                 coverage_t* havoc_coverage = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
@@ -401,9 +401,9 @@ int main(int argc, char *argv[])
     
     // Run the selected fuzzing mode
     if (random_mode) {
-        randomFuzzing(MAX_ITERATIONS, range.min, range.max);
+        randomFuzzing(MAX_ITERATIONS, range.min, range.max, fullPath);
     } else {
-        greyBoxFuzzing(MAX_ITERATIONS, range.min, range.max);
+        greyBoxFuzzing(MAX_ITERATIONS, range.min, range.max, fullPath);
     }
     
     free(temp_path);

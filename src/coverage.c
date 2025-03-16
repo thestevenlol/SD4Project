@@ -41,6 +41,45 @@ void __coverage_log_edge(unsigned int from_id, unsigned int to_id) {
     }
 }
 
+// Save coverage data to gcov files on crash or assertion
+void __coverage_save(void) {
+    if (!__coverage_map) {
+        fprintf(stderr, "Coverage map not initialized, nothing to save\n");
+        return;
+    }
+    
+    // Run gcov to update coverage data files
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Saving coverage data in directory: %s\n", cwd);
+        
+        // First check if we're in the 'coverage' directory where gcda files would be
+        if (strstr(cwd, "coverage") != NULL) {
+            // Run gcov on the Problem.c file to generate coverage data
+            if (system("gcov -b -c Problem.c > /dev/null 2>&1") == 0) {
+                printf("Successfully saved coverage data\n");
+            } else {
+                fprintf(stderr, "Failed to save coverage data with gcov\n");
+            }
+        } else {
+            // If we're not in the coverage directory, try to change to it
+            if (access("coverage", F_OK) == 0) {
+                if (chdir("coverage") == 0) {
+                    if (system("gcov -b -c Problem.c > /dev/null 2>&1") == 0) {
+                        printf("Successfully saved coverage data\n");
+                        // Change back to original directory
+                        chdir(cwd);
+                    } else {
+                        fprintf(stderr, "Failed to save coverage data with gcov\n");
+                        // Change back to original directory
+                        chdir(cwd);
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Dump coverage information for debugging
 void __coverage_dump(void) {
     if (!__coverage_map) {

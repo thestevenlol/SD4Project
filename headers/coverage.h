@@ -10,6 +10,7 @@ void __coverage_reset(void);
 void __coverage_log_edge(unsigned int from_id, unsigned int to_id);
 void __coverage_dump(void);
 int __coverage_count(void);
+void __coverage_save(void);
 
 // Instrumentation injection functions
 int instrumentTargetFile(const char* sourcePath, const char* fileName);
