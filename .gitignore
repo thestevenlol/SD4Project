@@ -62,4 +62,4 @@ harness.c.gcov
 *.gcda
 *.gcno
 .vscode
-.vscode
+fuzzing_progress.csv

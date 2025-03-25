@@ -1354,6 +1354,7 @@ void reach_error_99(){ reach_error_a(); }
 int main()
 {
     __coverage_init();
+    signal(SIGABRT, coverage_signal_handler);
     // main i/o-loop
     while(1)
     {
