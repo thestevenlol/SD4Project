@@ -9,6 +9,7 @@
 #include <execinfo.h>
 #include <unistd.h>
 #include "uthash.h"
+#include "coverage.h"
 
 #define BACKTRACE_SIZE 16
 
@@ -85,6 +86,9 @@ void segfault_handler(int signal, siginfo_t *info, void *context) {
     
     free(strs);
 
+    // Save coverage data if available before exiting
+    __coverage_save();
+
     // Exit the program after handling the fault
     exit(signal);
 }
@@ -100,6 +104,12 @@ void crash_handler(int signal)
     else
     {
         printf("Caught signal %d: Unknown signal\n", signal);
+    }
+
+    // For SIGABRT (assertion failures), save coverage data before exiting
+    if (signal == SIGABRT) {
+        printf("Assertion failure detected - saving coverage data\n");
+        __coverage_save();
     }
 
     // Handle fatal signals by exiting the program
