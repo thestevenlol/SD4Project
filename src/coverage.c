@@ -1,194 +1,174 @@
-// filepath: /home/jack/College/SD4Project/src/coverage.c
+// filepath: src/coverage.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include "../headers/coverage.h"
-#include "../headers/generational.h"
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <errno.h>
 
-// Signal handler for proper coverage data generation
-void coverage_signal_handler(int sig)
-{
-    if (sig == SIGABRT)
-    {
-        fprintf(stderr, "Caught abort signal, flushing coverage data...\n");
-        // Re-raise signal for normal abort behavior
-        signal(SIGABRT, SIG_DFL);
-        raise(SIGABRT);
+#include "../headers/coverage.h"
+
+// Global shared memory structure
+shared_mem_t fuzz_shared_mem = { .shm_id = -1, .map = NULL };
+volatile sig_atomic_t child_timed_out = 0;
+
+
+// Initialize shared memory for fuzzing
+int setup_shared_memory(void) {
+    // Create shared memory segment
+    // IPC_PRIVATE ensures a new segment
+    // IPC_CREAT | 0600 sets permissions
+    fuzz_shared_mem.shm_id = shmget(IPC_PRIVATE, COVERAGE_MAP_SIZE, IPC_CREAT | 0600);
+    if (fuzz_shared_mem.shm_id < 0) {
+        perror("Fuzzer Error: shmget failed");
+        return -1;
+    }
+
+    // Attach shared memory segment
+    fuzz_shared_mem.map = (coverage_t *)shmat(fuzz_shared_mem.shm_id, NULL, 0);
+    if (fuzz_shared_mem.map == (void *)-1) {
+        perror("Fuzzer Error: shmat failed");
+        // Clean up segment if attach failed
+        shmctl(fuzz_shared_mem.shm_id, IPC_RMID, NULL);
+        fuzz_shared_mem.shm_id = -1;
+        fuzz_shared_mem.map = NULL;
+        return -1;
+    }
+
+    // Initialize map to zero
+    memset(fuzz_shared_mem.map, 0, COVERAGE_MAP_SIZE);
+    printf("Fuzzer Info: Shared memory created (ID: %d, Size: %d KB)\n",
+           fuzz_shared_mem.shm_id, COVERAGE_MAP_SIZE / 1024);
+    return 0;
+}
+
+// Detach and remove shared memory
+void destroy_shared_memory(void) {
+    if (fuzz_shared_mem.map != NULL && fuzz_shared_mem.map != (void *)-1) {
+        if (shmdt(fuzz_shared_mem.map) < 0) {
+             perror("Fuzzer Warning: shmdt failed");
+        }
+        fuzz_shared_mem.map = NULL;
+    }
+    if (fuzz_shared_mem.shm_id >= 0) {
+        if (shmctl(fuzz_shared_mem.shm_id, IPC_RMID, NULL) < 0) {
+             perror("Fuzzer Warning: shmctl(IPC_RMID) failed");
+        }
+        fuzz_shared_mem.shm_id = -1;
+    }
+     printf("Fuzzer Info: Shared memory destroyed.\n");
+}
+
+// Reset the coverage map in shared memory (call before each run)
+void reset_coverage_map(void) {
+    if (fuzz_shared_mem.map) {
+        memset(fuzz_shared_mem.map, 0, COVERAGE_MAP_SIZE);
     }
 }
 
-// Global coverage map used by instrumented code
-coverage_t *__coverage_map = NULL;
-// Initialize coverage map
-void __coverage_init(void)
-{
-    if (__coverage_map == NULL)
-    {
-        __coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
-        if (!__coverage_map)
-        {
-            fprintf(stderr, "Failed to allocate memory for coverage map\n");
-            exit(1);
+// Check if the current map (in shared memory) has new coverage compared to a global map
+int has_new_coverage(const coverage_t* global_map) {
+    if (!fuzz_shared_mem.map || !global_map) {
+        return 0; // Cannot compare if maps are invalid
+    }
+
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        // Check if a bit is set in the shared map but not in the global map
+        if (fuzz_shared_mem.map[i] > 0 && global_map[i] == 0) {
+            return 1; // Found new coverage
+        }
+    }
+    return 0; // No new coverage found
+}
+
+// Update a global map with coverage found in the shared memory map
+// Simple version: just mark presence (1) if hit count > 0
+void update_global_coverage(coverage_t* global_map) {
+     if (!fuzz_shared_mem.map || !global_map) {
+        return; // Cannot update if maps are invalid
+    }
+
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (fuzz_shared_mem.map[i] > 0) {
+            global_map[i] = 1; // Mark as covered in the global map
+            // Could also use: global_map[i] |= fuzz_shared_mem.map[i]; for hit counts
+        }
+    }
+}
+
+// Calculate a fitness score based on the coverage map (usually the one in shared memory)
+// Note: Pass global_map to check for novelty bonus
+double calculate_coverage_fitness(const coverage_t* current_map, const coverage_t* global_map) {
+    if (!current_map || !global_map) return 0.0;
+
+    int covered_edges = 0;
+    int new_edges = 0;
+
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (current_map[i] > 0) {
+            covered_edges++;
+            // Check if this edge is new compared to the global map *before* update
+            if (global_map[i] == 0) {
+                new_edges++;
+            }
         }
     }
 
-    // Install signal handler to flush coverage data on abort
-    signal(SIGABRT, coverage_signal_handler);
-}
+    // Base fitness on coverage count
+    double fitness = (double)covered_edges;
 
-// Reset coverage map to all zeros
-void __coverage_reset(void)
-{
-    if (__coverage_map)
-    {
-        memset(__coverage_map, 0, COVERAGE_MAP_SIZE * sizeof(coverage_t));
-    }
-}
-
-// Log an edge transition in the coverage map
-void __coverage_log_edge(unsigned int from_id, unsigned int to_id)
-{
-    if (!__coverage_map)
-    {
-        __coverage_init();
+    // Heavily reward new edge discovery
+    if (new_edges > 0) {
+        fitness += new_edges * 10.0; // Bonus factor for new edges
     }
 
-    // Create a unique edge ID using both block IDs
-    unsigned int edge_id = (from_id ^ to_id) % COVERAGE_MAP_SIZE;
+    // Optional: Consider hit counts for density? (e.g., AFL uses bucketed counts)
 
-    // Increment hit count, saturating at 255
-    if (__coverage_map[edge_id] < 255)
-    {
-        __coverage_map[edge_id]++;
-    }
+    return fitness;
 }
-// Dump coverage information for debugging
-void __coverage_dump(void)
-{
-    if (!__coverage_map)
-    {
-        printf("Coverage map not initialized\n");
+
+// Count the number of edges covered in a map
+int count_covered_edges(const coverage_t* map) {
+     if (!map) return 0;
+
+    int covered = 0;
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (map[i] > 0) {
+            covered++;
+        }
+    }
+    return covered;
+}
+
+// Dump coverage summary for a given map
+void dump_coverage_summary(const coverage_t* map) {
+    if (!map) {
+        printf("Coverage map not available\n");
         return;
     }
 
-    int covered = 0;
-    for (int i = 0; i < COVERAGE_MAP_SIZE; i++)
-    {
-        if (__coverage_map[i] > 0)
-        {
-            covered++;
-        }
-    }
+    int covered = count_covered_edges(map);
+    // Calculate density (percentage)
+    double density = (COVERAGE_MAP_SIZE > 0) ? (double)covered * 100.0 / COVERAGE_MAP_SIZE : 0.0;
 
-    printf("Coverage summary: %d of %d edges covered\n", covered, COVERAGE_MAP_SIZE);
+    printf("Coverage summary: %d of %d potential edges covered (%.2f%% density)\n",
+           covered, COVERAGE_MAP_SIZE, density);
 }
-// Count the number of edges covered
-int __coverage_count(void)
-{
-    if (!__coverage_map)
-    {
-        return 0;
+
+
+// Generic signal handler
+void fuzzer_signal_handler(int sig) {
+    if (sig == SIGALRM) {
+        // Set flag indicating timeout
+        child_timed_out = 1;
+        // The waitpid in executeTargetInt needs to check this flag
     }
-
-    int covered = 0;
-    for (int i = 0; i < COVERAGE_MAP_SIZE; i++)
-    {
-        if (__coverage_map[i] > 0)
-        {
-            covered++;
-        }
-    }
-
-    return covered;
-}
-// Compile-time instrumentation using source code modification
-int instrumentTargetFile(const char *sourcePath, const char *fileName)
-{
-    char sourceFilePath[1024];
-    char tempFilePath[1024];
-    char command[2048];
-    char baseFileName[512];
-
-    // Extract base filename without extension if it ends with .c
-    strncpy(baseFileName, fileName, sizeof(baseFileName) - 1);
-    baseFileName[sizeof(baseFileName) - 1] = '\0';
-
-    char *dotPosition = strrchr(baseFileName, '.');
-    if (dotPosition && strcmp(dotPosition, ".c") == 0)
-    {
-        *dotPosition = '\0'; // Remove the .c extension
-    }
-
-    // Create source file path and instrumented file path
-    snprintf(sourceFilePath, sizeof(sourceFilePath), "%s/%s.c", sourcePath, baseFileName);
-    snprintf(tempFilePath, sizeof(tempFilePath), "%s/%s.instrumented.c", sourcePath, baseFileName);
-
-    // Command to add #include for coverage header
-    snprintf(command, sizeof(command),
-             "sed '1i\\#include \"../headers/coverage.h\"' %s > %s",
-             sourceFilePath, tempFilePath);
-
-    if (system(command) != 0)
-    {
-        fprintf(stderr, "Failed to add coverage header to file\n");
-        return -1;
-    }
-
-    // Insert initialization in main function only
-    // This is more reliable than trying to instrument every function
-    snprintf(command, sizeof(command),
-             "sed -i '/int main/,/{/s/{/{\\n    __coverage_init();\\n    signal(SIGABRT, coverage_signal_handler);/1' %s",
-             tempFilePath);
-
-    if (system(command) != 0)
-    {
-        fprintf(stderr, "Failed to instrument target file\n");
-        return -1;
-    }
-
-    return 0;
-}
-// Prepare target with coverage instrumentation and compile it
-int prepareTargetWithCoverage(const char *sourcePath, const char *fileName)
-{
-    char baseFileName[512];
-    char tempFilePath[1024];
-    char outputPath[1024];
-    char command[2048];
-
-    // Extract base filename without extension if it ends with .c
-    strncpy(baseFileName, fileName, sizeof(baseFileName) - 1);
-    baseFileName[sizeof(baseFileName) - 1] = '\0';
-
-    char *dotPosition = strrchr(baseFileName, '.');
-    if (dotPosition && strcmp(dotPosition, ".c") == 0)
-    {
-        *dotPosition = '\0'; // Remove the .c extension
-    }
-
-    // Instrument the source file
-    if (instrumentTargetFile(sourcePath, baseFileName) != 0)
-    {
-        return -1;
-    }
-
-    // Path to the instrumented file and output binary
-    snprintf(tempFilePath, sizeof(tempFilePath), "%s/%s.instrumented.c", sourcePath, baseFileName);
-    snprintf(outputPath, sizeof(outputPath), "%s/%s.cov", sourcePath, baseFileName);
-
-    // Compile the instrumented file with gcov flags and fuzz.c to provide __VERIFIER_nondet_int
-    // Include the current directory in the path to ensure gcov can find the source files
-    snprintf(command, sizeof(command),
-             "cd %s && gcc -g -Wall --coverage -fprofile-arcs -ftest-coverage -I%s/../headers -o %s.cov %s.instrumented.c %s/../src/coverage.c %s/../src/fuzz.c",
-             sourcePath, sourcePath, baseFileName, baseFileName, sourcePath, sourcePath);
-
-    if (system(command) != 0)
-    {
-        fprintf(stderr, "Failed to compile instrumented target\n");
-        return -1;
-    }
-
-    return 0;
+    // Can add handlers for SIGINT/SIGTERM for graceful shutdown
+    // if (sig == SIGINT || sig == SIGTERM) {
+    //     destroy_shared_memory();
+    //     // Any other cleanup
+    //     exit(0);
+    // }
 }

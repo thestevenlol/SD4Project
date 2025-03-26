@@ -1,42 +1,52 @@
+// filepath: headers/generational.h
 #ifndef GENERATIONAL_H
 #define GENERATIONAL_H
 
-#define POPULATION_SIZE 10
-#define NUM_GENERATIONS 4
-#define MUTATION_RATE 0.8      // Probability of mutation (e.g., 80%)
-#define TOURNAMENT_SIZE 3
+#include <time.h>
+#include "coverage.h" // Include coverage.h to get coverage_t and COVERAGE_MAP_SIZE
 
-// Coverage map definitions
-#define COVERAGE_MAP_SIZE 65536 // 64KB coverage map
-typedef unsigned char coverage_t;
+// --- Configuration ---
+#define POPULATION_SIZE 100     // Number of individuals in the population
+#define TOURNAMENT_SIZE 5       // Size of selection tournament
+#define MUTATION_RATE 0.15      // Probability of mutation (adjust as needed)
+#define CROSSOVER_RATE 0.7     // Probability of crossover (adjust as needed)
+#define NUM_GENERATIONS 5       // Number of generations per main fuzzer iteration
 
+// Define if the Individual struct's coverage_map is a pointer vs array
+// If it's coverage_t* coverage_map; then define this
+#define INDIVIDUAL_MAP_IS_POINTER
+
+// Structure for an individual in the population
 typedef struct {
-    int input_value;
-    double fitness_score; 
-    coverage_t* coverage_map; // Coverage map for this individual
+    int input_value;            // The input (genome)
+    double fitness_score;       // Fitness score (e.g., based on coverage)
+    time_t timestamp;           // Time when created/found
+
+#ifdef INDIVIDUAL_MAP_IS_POINTER
+    coverage_t* coverage_map;   // Pointer to coverage map for this individual's execution
+#else
+    coverage_t coverage_map[COVERAGE_MAP_SIZE]; // Array for coverage map
+#endif
+
 } Individual;
 
-// Global population arrays
-extern Individual* population;
-extern Individual* next_generation;
-
-// Global coverage map to track overall coverage
-extern coverage_t* global_coverage_map;
-
-// Function declarations
-double calculateCoverageFitness(coverage_t* coverage_map);
-void resetCoverageMap(coverage_t* map);
-void resetGlobalCoverageMap(void);
-int compareCoverageMaps(coverage_t* map1, coverage_t* map2);
-int hasNewCoverage(coverage_t* individual_map, coverage_t* global_map);
-void updateGlobalCoverage(coverage_t* individual_map);
-
-double calculatePlaceholderFitness(int input_value, int min_range, int max_range);
-Individual selectParent(Individual population[], int population_size);
-int mutateInteger(int original_value, int min_range, int max_range);
-int getNextPopulationIndex(int population_size);
-void generateNewPopulation(Individual population[], int population_size, Individual next_generation[], int min_range, int max_range);
+// --- Population Management ---
 void initializePopulations(void);
 void cleanupPopulations(void);
 
-#endif
+// --- GA Operations ---
+Individual selectParent(Individual population[], int population_size);
+void generateNewPopulation(Individual population[], int population_size, Individual next_generation[], int min_range, int max_range);
+
+// --- Utility Functions for Individual Maps ---
+void resetIndividualCoverageMap(coverage_t* map);
+// **FIX:** Add const to match definition in generational.c
+int compareCoverageMaps(const coverage_t* map1, const coverage_t* map2);
+
+// --- Global Variables (Consider encapsulating or passing as params) ---
+extern Individual* population;
+extern Individual* next_generation;
+// extern coverage_t* global_coverage_map; // Now managed in main.c
+
+
+#endif // GENERATIONAL_H

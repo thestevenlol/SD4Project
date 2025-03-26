@@ -63,3 +63,4 @@ harness.c.gcov
 *.gcno
 .vscode
 fuzzing_progress.csv
+timeouts/

@@ -1,4 +1,4 @@
-// filepath: /home/jack/College/SD4Project/main.c
+// filepath: src/main.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -9,497 +9,586 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
-#include "headers/fuzz.h"
-#include "headers/lex.h"
-#include "headers/io.h"
-#include "headers/testcase.h"
-#include "headers/target.h"
-#include "headers/range.h"
-#include "headers/generational.h"
-#include "headers/corpus.h"
-#include "headers/coverage.h"
+#include "../headers/fuzz.h"
+#include "../headers/io.h"
+#include "../headers/testcase.h"
+#include "../headers/target.h"
+#include "../headers/generational.h"
+#include "../headers/corpus.h"
+#include "../headers/coverage.h"
 
 #define MAX_ITERATIONS 10000
 #define CORPUS_DIR "corpus"
+#define CRASH_DIR "crashes"    // Directory for crashing inputs
+#define TIMEOUT_DIR "timeouts" // Directory for timeout inputs
 #define PROGRESS_FILE "fuzzing_progress.csv"
+#define TARGET_TIMEOUT_MS 1000
+#define FUZZER_EXEC_ERROR -999
 
-// Function to perform random fuzzing without coverage guidance
-void randomFuzzing(int iterations, int min_range, int max_range)
+int minRange = INT_MIN;
+int maxRange = INT_MAX;
+coverage_t *global_coverage_map = NULL;
+const char *target_exe_path_global = NULL; // Store path for signal handler
+
+// Function to save unique findings (crashes/timeouts)
+void save_finding(int input_val, const char *finding_type)
 {
-    printf("\n=== Starting random fuzzing (no coverage guidance) ===\n");
+    char finding_dir[PATH_MAX];
+    char filename[PATH_MAX];
+    struct stat st = {0};
 
-    FILE *progress_file = fopen(PROGRESS_FILE, "w");
-    if (progress_file)
+    snprintf(finding_dir, sizeof(finding_dir), "%s", finding_type); // e.g., "crashes"
+
+    // Create directory if it doesn't exist
+    if (stat(finding_dir, &st) == -1)
     {
-        fprintf(progress_file, "Iteration,Coverage,Mode\n");
+        if (mkdir(finding_dir, 0755) == -1 && errno != EEXIST)
+        {
+            fprintf(stderr, "Warning: Failed to create %s directory: %s\n", finding_dir, strerror(errno));
+            return; // Cannot save
+        }
     }
 
-    // Initialize baseline coverage map
-    coverage_t *baseline_coverage = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+    // Use input value for filename (careful with large/negative values)
+    // Consider hashing input if values are problematic for filenames
+    snprintf(filename, sizeof(filename), "%s/finding_%d_%ld", finding_dir, input_val, (long)time(NULL));
 
-    // Reset coverage maps at start
-    __coverage_reset();
-    resetGlobalCoverageMap();
+    // Check if file already exists (simple check, might collide)
+    if (stat(filename, &st) == 0)
+    {
+        // printf("Note: Finding file %s already exists, not overwriting.\n", filename);
+        return; // Don't overwrite for now
+    }
+
+    FILE *fp = fopen(filename, "w");
+    if (fp)
+    {
+        fprintf(fp, "%d\n", input_val);
+        fclose(fp);
+        printf(">>> Saved %s input to: %s <<<\n", finding_type, filename);
+    }
+    else
+    {
+        fprintf(stderr, "Warning: Failed to save finding to %s: %s\n", filename, strerror(errno));
+    }
+}
+
+void graceful_shutdown(int sig)
+{
+    fprintf(stderr, "[Main] Signal %d received, shutting down...\n", sig); // Use stderr
+    destroy_shared_memory();
+    if (global_coverage_map)
+        free(global_coverage_map);
+    if (target_exe_path_global)
+        cleanup_target(target_exe_path_global);
+    exit(0);
+}
+
+// Function to perform random fuzzing
+void randomFuzzing(const char *target_exe, int iterations, int min_r, int max_r)
+{
+    fprintf(stderr, "[Main] Starting randomFuzzing...\n");
+    FILE *progress_file = fopen(PROGRESS_FILE, "a"); // Append mode
+    if (progress_file && ftell(progress_file) == 0)
+    { // Write header only if file is new/empty
+        fprintf(progress_file, "Iteration,Coverage,Mode,CorpusSize,Crashes,Timeouts\n");
+    }
+
+    global_coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+    if (!global_coverage_map)
+    { /* error */
+        if (progress_file)
+            fclose(progress_file);
+        return;
+    }
+
+    int crashes = 0;
+    int timeouts = 0;
 
     for (int i = 0; i < iterations; i++)
     {
-        // Generate a completely random input within range
-        int random_input = min_range + rand() % (max_range - min_range + 1);
-
-        // Reset coverage before each test
-        __coverage_reset();
-
-        // Execute with the random input
-        executeTargetInt(random_input);
-
-        // Track if we found new coverage
-        if (hasNewCoverage(__coverage_map, baseline_coverage))
-        {
-            updateGlobalCoverage(baseline_coverage);
-            printf("Found new coverage with input: %d (Iteration: %d)\n", random_input, i);
+        long long range_size = (long long)max_r - min_r + 1;
+        int random_input = min_r;
+        if (range_size > 0)
+        { // Avoid modulo by zero or negative
+            random_input = min_r + (rand() % range_size);
         }
 
-        // Save progress data every 100 iterations
-        if (progress_file && (i % 100 == 0 || i == iterations - 1))
+        int status = execute_target_fork(target_exe, random_input, TARGET_TIMEOUT_MS);
+
+        update_global_coverage(global_coverage_map);
+
+        // **FIX:** Check status codes correctly
+        if (status < 0 && status != -SIGALRM && status != FUZZER_EXEC_ERROR)
+        { // Negative other than timeout/internal error = Signal Crash
+            crashes++;
+            printf("!!! Random Crash found with input: %d (Iteration: %d, Signal: %d) !!!\n", random_input, i, -status);
+            save_finding(random_input, CRASH_DIR);
+        }
+        else if (status == -SIGALRM)
         {
-            int covered = __coverage_count();
-            fprintf(progress_file, "%d,%d,random\n", i, covered);
-            printf("Iteration %d: Coverage %d paths\n", i, covered);
+            timeouts++;
+            printf("!!! Random Timeout found with input: %d (Iteration: %d) !!!\n", random_input, i);
+            save_finding(random_input, TIMEOUT_DIR);
+        }
+        else if (status > 0)
+        {
+            // Optional: Log non-zero exits?
+            // printf("Info: Random run exited with code %d (Input: %d)\n", status, random_input);
+        }
+        else if (status == FUZZER_EXEC_ERROR)
+        {
+            fprintf(stderr, "Warning: Fuzzer execution error for input %d\n", random_input);
+        }
+
+        if (i % 100 == 0 || i == iterations - 1)
+        {
+            int current_total_coverage = count_covered_edges(global_coverage_map);
+            printf("Iter %d: Total Cov %d, Crashes %d, Timeouts %d\n",
+                   i, current_total_coverage, crashes, timeouts);
+            if (progress_file)
+            {
+                // Use dummy values for corpus size in random mode
+                fprintf(progress_file, "%d,%d,random,0,%d,%d\n", i, current_total_coverage, crashes, timeouts);
+                fflush(progress_file);
+            }
         }
     }
-
-    // Print final statistics
-    int total_coverage = 0;
-    for (int i = 0; i < COVERAGE_MAP_SIZE; i++)
-    {
-        if (baseline_coverage[i] > 0)
-        {
-            total_coverage++;
-        }
-    }
-
     printf("\n=== Random fuzzing completed ===\n");
     printf("Total iterations: %d\n", iterations);
-    printf("Final coverage: %d paths\n", total_coverage);
-
-    free(baseline_coverage);
+    printf("Final total coverage: %d paths\n", count_covered_edges(global_coverage_map));
+    printf("Crashes: %d, Timeouts: %d\n", crashes, timeouts);
+    dump_coverage_summary(global_coverage_map);
 
     if (progress_file)
-    {
         fclose(progress_file);
-    }
 }
-// Function to perform grey box fuzzing with coverage guidance
-void greyBoxFuzzing(int iterations, int min_range, int max_range)
+
+// Function to perform grey box fuzzing
+void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r)
 {
-    FILE *progress_file = fopen(PROGRESS_FILE, "w");
-    if (progress_file)
-    {
-        fprintf(progress_file, "Iteration,Coverage,Mode\n");
+    fprintf(stderr, "[Main] Starting greyBoxFuzzing...\n");
+    FILE *progress_file = fopen(PROGRESS_FILE, "a"); // Append mode
+    if (progress_file && ftell(progress_file) == 0)
+    { // Write header only if file is new/empty
+        fprintf(progress_file, "Iteration,Coverage,Mode,CorpusSize,Crashes,Timeouts\n");
     }
 
-    // Initialize coverage and corpus tracking
-    __coverage_init();
-    __coverage_reset(); // Reset coverage at start
+    fprintf(stderr, "[Main] Allocating global coverage map...\n");
+    global_coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+    if (!global_coverage_map)
+    {
+        fprintf(stderr, "[Main] Error: Failed to allocate global coverage map\n");
+        if (progress_file)
+            fclose(progress_file);
+        return;
+    }
+
+    fprintf(stderr, "[Main] Initializing corpus...\n");
+    if (initializeCorpus(CORPUS_DIR) != 0)
+    {
+        fprintf(stderr, "[Main] Error: Failed to initialize corpus\n");
+        free(global_coverage_map);
+        if (progress_file)
+            fclose(progress_file);
+        return;
+    }
+    fprintf(stderr, "[Main] Loading corpus...\n");
+    loadCorpus(CORPUS_DIR); // Try loading existing corpus
+
+    fprintf(stderr, "[Main] Initializing populations...\n");
     initializePopulations();
-    resetGlobalCoverageMap(); // Reset global coverage map at start
-    initializeCorpus(CORPUS_DIR);
 
     printf("Starting grey-box fuzzing with coverage feedback...\n");
 
-    // 1. Initialize population with random inputs
-    printf("Initializing population...\n");
+    // Initialize population & evaluate initial inputs
+    fprintf(stderr, "[Main] Initializing population & evaluating initial inputs...\n");
+    int initial_crashes = 0;
+    int initial_timeouts = 0;
+    // If corpus was loaded, evaluate those first? Or just init population randomly?
+    // Let's init population randomly and add any initial corpus findings later if needed
     for (int i = 0; i < POPULATION_SIZE; i++)
     {
-        __coverage_reset(); // Reset before each individual evaluation
-
-        population[i].input_value = min_range + rand() % (max_range - min_range + 1);
-
-        // Reset coverage map for this run
-        resetCoverageMap(population[i].coverage_map);
-
-        // Execute target and collect coverage
-        executeTargetInt(population[i].input_value);
-
-        // Copy coverage data from __coverage_map to individual's coverage map
-        if (__coverage_map)
+        long long range_size = (long long)max_r - min_r + 1;
+        population[i].input_value = min_r;
+        if (range_size > 0)
         {
-            memcpy(population[i].coverage_map, __coverage_map, COVERAGE_MAP_SIZE * sizeof(coverage_t));
+            population[i].input_value = min_r + (rand() % range_size);
         }
 
-        // Calculate fitness based on coverage
-        population[i].fitness_score = calculateCoverageFitness(population[i].coverage_map);
+        int status = execute_target_fork(target_exe, population[i].input_value, TARGET_TIMEOUT_MS);
 
-        // Check if input discovered new coverage
-        if (hasNewCoverage(population[i].coverage_map, global_coverage_map))
+        if (fuzz_shared_mem.map)
         {
-            updateGlobalCoverage(population[i].coverage_map);
-
-            // Save interesting inputs to corpus
-            saveToCorpus(population[i].input_value,
-                         population[i].coverage_map,
-                         population[i].fitness_score,
-                         1); // Mark as interesting
+            memcpy(population[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE * sizeof(coverage_t));
         }
-    }
-    // Reset coverage before main fuzzing loop
-    __coverage_reset();
-
-    // Save initial progress data
-    if (progress_file)
-    {
-        int covered = __coverage_count();
-        fprintf(progress_file, "0,%d,greybox\n", covered);
-    }
-
-    // Main fuzzing loop
-    int last_corpus_update = 0;
-
-    printf("\n=== Starting main fuzzing loop ===\n");
-
-    for (int iter = 0; iter < iterations; iter++)
-    {
-        // Reset coverage at start of each iteration
-        __coverage_reset();
-
-        if (iter % 100 == 0)
+        else
         {
-            printf("Iteration %d, corpus size: %d\n", iter, getCorpusSize());
+            memset(population[i].coverage_map, 0, COVERAGE_MAP_SIZE * sizeof(coverage_t));
+        }
 
-            // Save progress data
-            if (progress_file)
+        population[i].fitness_score = calculate_coverage_fitness(population[i].coverage_map, global_coverage_map);
+
+        int new_cov = 0;
+        for (int k = 0; k < COVERAGE_MAP_SIZE; ++k)
+        {
+            if (population[i].coverage_map[k] > 0 && global_coverage_map[k] == 0)
             {
-                int covered = __coverage_count();
-                fprintf(progress_file, "%d,%d,greybox\n", iter, covered);
+                new_cov = 1;
+                break;
             }
         }
 
-        // Periodically minimize corpus after enough new inputs
-        if (getCorpusSize() > 0 && iter - last_corpus_update > 500)
+        if (new_cov)
         {
-            printf("Minimizing corpus...\n");
-            minimizeCorpus();
+            update_global_coverage(population[i].coverage_map);
+            saveToCorpus(population[i].input_value, population[i].coverage_map, population[i].fitness_score, 1);
+        }
+
+        // Count initial crashes/timeouts from population seeding
+        if (status < 0 && status != -SIGALRM && status != FUZZER_EXEC_ERROR)
+        {
+            initial_crashes++;
+            save_finding(population[i].input_value, CRASH_DIR);
+        }
+        else if (status == -SIGALRM)
+        {
+            initial_timeouts++;
+            save_finding(population[i].input_value, TIMEOUT_DIR);
+        }
+    }
+    fprintf(stderr, "[Main] Population initialized. Initial corpus size: %d\n", getCorpusSize());
+
+    if (progress_file)
+    {
+        int initial_coverage = count_covered_edges(global_coverage_map);
+        fprintf(progress_file, "0,%d,greybox,%d,%d,%d\n", initial_coverage, getCorpusSize(), initial_crashes, initial_timeouts);
+        fflush(progress_file);
+    }
+
+    int last_corpus_update = 0;
+    int crashes = initial_crashes; // Start counting from initial phase
+    int timeouts = initial_timeouts;
+
+    fprintf(stderr, "[Main] Starting main fuzzing loop...\n");
+    for (int iter = 1; iter <= iterations; iter++)
+    { // Start iter from 1
+
+        int input_val;
+        int generated_new = 0; // Flag if *corpus* got a new entry this iteration
+
+        // --- Input Selection Strategy ---
+        // Simplified: 50% Corpus (mutate/crossover), 50% GA
+        if (getCorpusSize() > 0 && rand() % 2 == 0)
+        {
+            CorpusEntry *entry = selectCorpusEntry();
+            if (!entry) {
+                fprintf(stderr, "[Main %d] Error: selectCorpusEntry returned NULL despite corpus size > 0. Skipping corpus step.\n", iter);
+                // Force GA path or skip iteration? Let's try forcing GA.
+                goto use_ga; // Jump to the 'else' block for GA
+                // continue; // Alternative: Skip this iteration
+           }
+
+            int mutation_type = rand() % 10;
+            if (mutation_type < 7 || getCorpusSize() < 2)
+            { // Mutate/Havoc
+                input_val = mutateHavoc(entry->input_value);
+            }
+            else
+            { // Crossover
+                CorpusEntry *entry2 = selectCorpusEntry();
+                if (!entry2 || entry == entry2)
+                    input_val = mutateHavoc(entry->input_value); // Avoid self-crossover
+                else
+                    input_val = crossover(entry->input_value, entry2->input_value);
+            }
+        }
+        else
+        { // GA-based generation
+use_ga:
+            generateNewPopulation(population, POPULATION_SIZE, next_generation, min_r, max_r);
+            for (int i = 0; i < POPULATION_SIZE; i++)
+            {
+                int status_ga = execute_target_fork(target_exe, next_generation[i].input_value, TARGET_TIMEOUT_MS);
+                if (fuzz_shared_mem.map)
+                    memcpy(next_generation[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE);
+                else
+                    memset(next_generation[i].coverage_map, 0, COVERAGE_MAP_SIZE);
+                next_generation[i].fitness_score = calculate_coverage_fitness(next_generation[i].coverage_map, global_coverage_map);
+
+                int new_cov_ga = 0;
+                for (int k = 0; k < COVERAGE_MAP_SIZE; ++k)
+                {
+                    if (next_generation[i].coverage_map[k] > 0 && global_coverage_map[k] == 0)
+                    {
+                        new_cov_ga = 1;
+                        break;
+                    }
+                }
+
+                if (new_cov_ga)
+                {
+                    update_global_coverage(next_generation[i].coverage_map);
+                    saveToCorpus(next_generation[i].input_value, next_generation[i].coverage_map, next_generation[i].fitness_score, 1);
+                    generated_new = 1; // Record that corpus grew
+                    last_corpus_update = iter;
+                }
+                // **FIX:** Check status codes correctly for GA runs
+                if (status_ga < 0 && status_ga != -SIGALRM && status_ga != FUZZER_EXEC_ERROR)
+                {
+                    crashes++;
+                    save_finding(next_generation[i].input_value, CRASH_DIR);
+                }
+                else if (status_ga == -SIGALRM)
+                {
+                    timeouts++;
+                    save_finding(next_generation[i].input_value, TIMEOUT_DIR);
+                }
+                else if (status_ga > 0)
+                { /* Non-zero exit */
+                }
+                else if (status_ga == FUZZER_EXEC_ERROR)
+                { /* Fuzzer error */
+                }
+            }
+            // Replace population
+            for (int i = 0; i < POPULATION_SIZE; ++i)
+            {
+                population[i].input_value = next_generation[i].input_value;
+                population[i].fitness_score = next_generation[i].fitness_score;
+                memcpy(population[i].coverage_map, next_generation[i].coverage_map, COVERAGE_MAP_SIZE);
+            }
+            input_val = population[rand() % POPULATION_SIZE].input_value; // Select one from new pop for main check
+        }
+
+        // Clamp input value (maybe redundant if mutation/crossover handle it)
+        if (input_val < min_r)
+            input_val = min_r;
+        if (input_val > max_r)
+            input_val = max_r;
+
+        // --- Execute the chosen input ---
+        int status = execute_target_fork(target_exe, input_val, TARGET_TIMEOUT_MS);
+
+        // --- Check results ---
+        int current_iter_new_cov = 0;
+        if (status != FUZZER_EXEC_ERROR && fuzz_shared_mem.map)
+        { // Check only if execution likely succeeded enough to get coverage
+            current_iter_new_cov = has_new_coverage(global_coverage_map);
+        }
+
+        if (current_iter_new_cov)
+        {
+            printf("+++ New coverage found with input: %d (Iteration: %d) +++\n", input_val, iter);
+            double fitness = calculate_coverage_fitness(fuzz_shared_mem.map, global_coverage_map);
+            update_global_coverage(global_coverage_map);
+            saveToCorpus(input_val, fuzz_shared_mem.map, fitness, 1);
+            generated_new = 1; // Record corpus growth
             last_corpus_update = iter;
         }
 
-        // 2. Generational loop with crossover and mutation
-        for (int generation = 0; generation < NUM_GENERATIONS; generation++)
-        {
-            // Reset coverage before each generation
-            __coverage_reset();
-
-            // Generate new population using selection, crossover, and mutation
-            generateNewPopulation(population, POPULATION_SIZE, next_generation, min_range, max_range);
-
-            // Evaluate fitness of new population using coverage
-            for (int i = 0; i < POPULATION_SIZE; i++)
-            {
-                // Reset coverage before evaluating each individual
-                __coverage_reset();
-                resetCoverageMap(next_generation[i].coverage_map);
-
-                // Execute with the mutated input
-                executeTargetInt(next_generation[i].input_value);
-
-                // Copy coverage data
-                if (__coverage_map)
-                {
-                    memcpy(next_generation[i].coverage_map, __coverage_map,
-                           COVERAGE_MAP_SIZE * sizeof(coverage_t));
-                }
-
-                // Calculate fitness based on coverage
-                next_generation[i].fitness_score =
-                    calculateCoverageFitness(next_generation[i].coverage_map);
-
-                // Check for new coverage
-                if (hasNewCoverage(next_generation[i].coverage_map, global_coverage_map))
-                {
-                    updateGlobalCoverage(next_generation[i].coverage_map);
-
-                    // Save to corpus
-                    saveToCorpus(next_generation[i].input_value,
-                                 next_generation[i].coverage_map,
-                                 next_generation[i].fitness_score,
-                                 1); // Mark as interesting
-
-                    last_corpus_update = iter;
-                }
+        // **FIX:** Handle crashes/timeouts for the main execution correctly
+        if (status < 0 && status != -SIGALRM && status != FUZZER_EXEC_ERROR)
+        { // Crash
+            crashes++;
+            printf("!!! Crash found with input: %d (Iteration: %d, Signal: %d) !!!\n", input_val, iter, -status);
+            save_finding(input_val, CRASH_DIR);
+            // Also add crashing input to corpus? Might be useful for mutation.
+            if (fuzz_shared_mem.map)
+            {                                                         // Save with coverage map if available
+                saveToCorpus(input_val, fuzz_shared_mem.map, 0.0, 1); // Low fitness, but interesting
             }
-
-            // Replace current population with the new generation
-            memcpy(population, next_generation, sizeof(Individual) * POPULATION_SIZE);
+            else
+            {
+                saveToCorpus(input_val, NULL, 0.0, 1);
+            }
+            generated_new = 1; // Counts as corpus update for stagnation check
+        }
+        else if (status == -SIGALRM)
+        { // Timeout
+            timeouts++;
+            printf("!!! Timeout found with input: %d (Iteration: %d) !!!\n", input_val, iter);
+            save_finding(input_val, TIMEOUT_DIR);
+            if (fuzz_shared_mem.map)
+                saveToCorpus(input_val, fuzz_shared_mem.map, 0.0, 1);
+            else
+                saveToCorpus(input_val, NULL, 0.0, 1);
+            generated_new = 1;
+        }
+        else if (status > 0)
+        {   // Non-zero exit
+            // printf("Info: Input %d exited with code %d\n", input_val, status);
+        }
+        else if (status == FUZZER_EXEC_ERROR)
+        { // Fuzzer internal error
+            fprintf(stderr, "Warning: Fuzzer execution error for input %d\n", input_val);
         }
 
-        // 3. Occasionally use crossover between corpus entries to create new inputs
-        if (getCorpusSize() >= 2 && iter % 5 == 0)
+        // --- Periodic Actions ---
+        if (iter % 100 == 0 || iter == iterations || generated_new)
         {
-            // Reset coverage before crossover operations
-            __coverage_reset();
-
-            // Select two entries from corpus
-            CorpusEntry *entry1 = selectCorpusEntry();
-            CorpusEntry *entry2 = selectCorpusEntry();
-
-            if (entry1 && entry2)
+            int current_total_coverage = count_covered_edges(global_coverage_map);
+            int corpus_s = getCorpusSize();
+            printf("Iter %d: Total Cov %d, Corpus %d, Crashes %d, Timeouts %d\n",
+                   iter, current_total_coverage, corpus_s, crashes, timeouts);
+            if (progress_file)
             {
-                // Perform crossover
-                int child_input = crossover(entry1->input_value, entry2->input_value);
-
-                // Execute with crossover result
-                executeTargetInt(child_input);
-
-                // Check if the crossover produced interesting results
-                coverage_t *child_coverage = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
-                if (child_coverage)
-                {
-                    memcpy(child_coverage, __coverage_map, COVERAGE_MAP_SIZE * sizeof(coverage_t));
-
-                    double fitness = calculateCoverageFitness(child_coverage);
-
-                    // Check for new coverage
-                    if (hasNewCoverage(child_coverage, global_coverage_map))
-                    {
-                        updateGlobalCoverage(child_coverage);
-                        saveToCorpus(child_input, child_coverage, fitness, 1);
-                    }
-
-                    free(child_coverage);
-                }
+                fprintf(progress_file, "%d,%d,greybox,%d,%d,%d\n",
+                        iter, current_total_coverage, corpus_s, crashes, timeouts);
+                fflush(progress_file);
             }
         }
 
-        // 4. Occasionally apply havoc mutation to corpus entries
-        if (iter % 10 == 0 && getCorpusSize() > 0)
+        // Corpus minimization (optional, based on stagnation)
+        if (getCorpusSize() > 50 && iter - last_corpus_update > 2000)
         {
-            // Reset coverage before havoc mutation
-            __coverage_reset();
-
-            CorpusEntry *entry = selectCorpusEntry();
-
-            if (entry)
-            {
-                int havoc_input = mutateHavoc(entry->input_value);
-
-                // Execute with havoc result
-                executeTargetInt(havoc_input);
-
-                // Check if the havoc produced interesting results
-                coverage_t *havoc_coverage = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
-                if (havoc_coverage)
-                {
-                    memcpy(havoc_coverage, __coverage_map, COVERAGE_MAP_SIZE * sizeof(coverage_t));
-
-                    double fitness = calculateCoverageFitness(havoc_coverage);
-
-                    // Check for new coverage
-                    if (hasNewCoverage(havoc_coverage, global_coverage_map))
-                    {
-                        updateGlobalCoverage(havoc_coverage);
-                        saveToCorpus(havoc_input, havoc_coverage, fitness, 1);
-                    }
-
-                    free(havoc_coverage);
-                }
-            }
+            printf("Minimizing corpus (stagnant)...\n");
+            minimizeCorpus();
+            last_corpus_update = iter;
         }
     }
-
-    // Save final progress data
-    if (progress_file)
-    {
-        int covered = __coverage_count();
-        fprintf(progress_file, "%d,%d,greybox\n", iterations, covered);
-    }
-
-    // Print final statistics
+    fprintf(stderr, "[Main] Fuzzing loop finished.\n"); // Log loop exit
     printf("\n=== Grey box fuzzing completed ===\n");
     printf("Total iterations: %d\n", iterations);
+    printf("Crashes: %d, Timeouts: %d\n", crashes, timeouts);
     printCorpusStats();
-    __coverage_dump();
+    dump_coverage_summary(global_coverage_map);
 
-    // Cleanup
     cleanupPopulations();
     cleanupCorpus();
-
     if (progress_file)
-    {
         fclose(progress_file);
-    }
 }
 
-// Main function with mode selection
+// Main function
 int main(int argc, char *argv[])
 {
+    fprintf(stderr, "[Main] Fuzzer starting...\n");
     int opt;
-    int random_mode = 0; // Default is grey box fuzzing
+    int random_mode = 0;
+    const char *filename = NULL;
 
-    // Parse command line options
-    while ((opt = getopt(argc, argv, "r")) != -1)
+    fprintf(stderr, "[Main] Parsing arguments...\n");
+    while ((opt = getopt(argc, argv, "ri:o:n:x:")) != -1)
     {
         switch (opt)
         {
         case 'r':
-            random_mode = 1; // Enable random fuzzing mode
+            random_mode = 1;
+            fprintf(stderr, "[Main] Arg: Random mode enabled\n"); // Add log
+            break;
+        case 'i':                                                               // Input target source file
+            filename = optarg;                                                  // optarg contains the argument to -i
+            fprintf(stderr, "[Main] Arg: Target file set to '%s'\n", filename); // Add log
+            break;
+        // Add options for min/max range?
+        case 'n':
+            // minRange = atoi(optarg); // Example if using -n
+            fprintf(stderr, "[Main] Arg: Option -n found with '%s'\n", optarg); // Add log
+            break;
+        case 'x':
+            // maxRange = atoi(optarg); // Example if using -x
+            fprintf(stderr, "[Main] Arg: Option -x found with '%s'\n", optarg); // Add log
+            break;
+        case 'o':                                                               // Output directory? (unused for now)
+            fprintf(stderr, "[Main] Arg: Option -o found with '%s'\n", optarg); // Add log
+            break;
+        case '?': // Handle unknown options or missing arguments
+            fprintf(stderr, "[Main] Warning: Unknown option or missing argument for '-%c'\n", optopt);
+            // You might want to exit here depending on desired behavior
             break;
         default:
-            fprintf(stderr, "Usage: %s [-r] <filename>\n", argv[0]);
-            fprintf(stderr, "  -r    Use random fuzzing instead of grey box\n");
+            // Should not happen with getopt
+            fprintf(stderr, "[Main] Error: Unexpected argument parsing result.\n");
             return 1;
         }
-    }
+    } // Keep options parsing
 
-    if (optind >= argc)
+    if (!filename)
     {
-        fprintf(stderr, "Expected filename argument after options\n");
-        fprintf(stderr, "Usage: %s [-r] <filename>\n", argv[0]);
+        fprintf(stderr, "[Main] Error: Target source file (-i) is required.\n");
         return 1;
     }
+    fprintf(stderr, "[Main] Target file: %s\n", filename);
 
-    const char *filename = argv[optind];
-    char *temp_path = strdup(filename);
-    if (!temp_path)
-    {
-        perror("Error duplicating filename");
-        return 1;
-    }
-
-    const char *base_filename = basename(temp_path);
+    fprintf(stderr, "[Main] Resolving paths...\n");
     char *fullPath = realpath(filename, NULL);
     if (!fullPath)
-    {
-        perror("Error getting full path");
-        free(temp_path);
+    { /* error */
         return 1;
     }
-
-    printf("Full path: %s\n", fullPath);
-    printf("Filename: %s\n", filename);
-    printf("Base filename: %s\n", base_filename);
-    printf("Mode: %s\n", random_mode ? "Random fuzzing" : "Grey box fuzzing");
-
-    // Ensure that GCOV_PREFIX is not set, which could cause coverage data to be stored in wrong location
-    unsetenv("GCOV_PREFIX");
-
-    char *source_dir = dirname(strdup(fullPath));
-    char baseFileName[512];
-
-    // Extract base filename without extension if it ends with .c
-    strncpy(baseFileName, base_filename, sizeof(baseFileName) - 1);
-    baseFileName[sizeof(baseFileName) - 1] = '\0';
-
-    char *dotPosition = strrchr(baseFileName, '.');
-    if (dotPosition && strcmp(dotPosition, ".c") == 0)
-    {
-        *dotPosition = '\0'; // Remove the .c extension
+    char *temp_path_dir = strdup(fullPath);
+    char *temp_path_base = strdup(fullPath);
+    if (!temp_path_dir || !temp_path_base)
+    { /* error */ /* free */
+        return 1;
     }
+    const char *source_dir = dirname(temp_path_dir);
+    const char *base_filename = basename(temp_path_base);
 
-    // Compile target with coverage instrumentation
-    printf("Preparing target with coverage instrumentation...\n");
-    if (prepareTargetWithCoverage(source_dir, baseFileName) != 0)
+    char target_exe_name[PATH_MAX], base_name_no_ext[PATH_MAX], target_exe_path[PATH_MAX];
+    // ... (generate target_exe_path as before) ...
+    snprintf(target_exe_name, sizeof(target_exe_name), "%s_fuzz", base_name_no_ext); // Simplified generation
+    snprintf(target_exe_path, sizeof(target_exe_path), "%s/%s", source_dir, target_exe_name);
+    fprintf(stderr, "[Main] Target source dir: %s\n", source_dir);
+    fprintf(stderr, "[Main] Target base name: %s\n", base_filename);
+    fprintf(stderr, "[Main] Output executable: %s\n", target_exe_path);
+    target_exe_path_global = target_exe_path; // Store globally for cleanup handler
+
+    printf("Fuzzer Info:\n"); /* ... print info ... */
+
+    fprintf(stderr, "[Main] Compiling target...\n");
+    if (compile_target_with_clang_coverage(source_dir, base_filename, target_exe_name) != 0)
     {
-        fprintf(stderr, "Coverage instrumentation failed\n");
-        // Fall back to regular compilation
-        printf("Falling back to regular compilation...\n");
-        if (compileTargetFile(filename, base_filename) != 0)
-        {
-            fprintf(stderr, "Compilation failed\n");
-            free(temp_path);
-            free(fullPath);
-            return 1;
-        }
+        fprintf(stderr, "[Main] Error: Failed to compile target.\n");
+        free(fullPath);
+        free(temp_path_dir);
+        free(temp_path_base);
+        return 1;
     }
+    fprintf(stderr, "[Main] Target compiled successfully.\n");
 
-    unsigned int seed = time(NULL);
-    printf("Using seed: %u\n", seed);
+    fprintf(stderr, "[Main] Seeding RNG...\n");
+    unsigned int seed = time(NULL) ^ getpid();
+    fprintf(stderr, "[Main] Using seed: %u\n", seed);
     srand(seed);
 
-    printf("Generating lexer...\n");
-    if (generateLexer() != ERR_SUCCESS)
+    fprintf(stderr, "[Main] Setting up shared memory...\n");
+    if (setup_shared_memory() != 0)
     {
-        printf("Failed to generate lexer\n");
-        free(temp_path);
+        fprintf(stderr, "[Main] Error: Failed to set up shared memory.\n"); // Use stderr
         free(fullPath);
+        free(temp_path_dir);
+        free(temp_path_base);
+        cleanup_target(target_exe_path); // Clean up compiled target on error
         return 1;
     }
+    fprintf(stderr, "[Main] Shared memory setup complete.\n");
 
-    printf("Scanning file: %s\n", fullPath);
-    if (lexScanFile(fullPath) != ERR_SUCCESS)
-    {
-        printf("Failed to scan file\n");
-        free(temp_path);
-        free(fullPath);
-        return 1;
-    }
+    fprintf(stderr, "[Main] Setting up signal handlers...\n");
+    signal(SIGINT, graceful_shutdown);
+    signal(SIGTERM, graceful_shutdown);
 
-    struct InputRange range = extractInputRange(OUTPUT_FILE);
-    if (!range.valid)
-    {
-        printf("Failed to extract input range\n");
-        free(temp_path);
-        free(fullPath);
-        return 1;
-    }
-
-    printf("Input range: [%d, %d]\n", range.min, range.max);
-    minRange = range.min;
-    maxRange = range.max;
-
-    // Install signal handler for SIGABRT to ensure coverage data is written even on abort
-    signal(SIGABRT, coverage_signal_handler);
-
-    // Initialize coverage tracking
-    __coverage_init();
-
-    // Reset global coverage map before starting any fuzzing
-    resetGlobalCoverageMap();
-
-    // Run the selected fuzzing mode
+    fprintf(stderr, "[Main] Starting fuzzing mode: %s\n", random_mode ? "Random" : "Grey Box");
     if (random_mode)
     {
-        randomFuzzing(MAX_ITERATIONS, range.min, range.max);
+        randomFuzzing(target_exe_path, MAX_ITERATIONS, minRange, maxRange);
     }
     else
     {
-        greyBoxFuzzing(MAX_ITERATIONS, range.min, range.max);
+        greyBoxFuzzing(target_exe_path, MAX_ITERATIONS, minRange, maxRange);
     }
 
-    // Generate gcov data by running gcov on the correct instrumented file
-    char gcov_command[1024];
-
-    // Make sure to run gcov from the source directory and on the .instrumented.c file
-    snprintf(gcov_command, sizeof(gcov_command),
-             "cd %s && gcov -b -c %s.instrumented.c", source_dir, baseFileName);
-    printf("Generating coverage data with: %s\n", gcov_command);
-
-    int gcov_result = system(gcov_command);
-    if (gcov_result != 0)
-    {
-        printf("GCOV Command: \"cd %s && gcov -b -c %s.instrumented.c\", source_dir, baseFileName");
-        fprintf(stderr, "Warning: gcov failed to generate coverage data (error code: %d)\n", gcov_result);
-
-        // Try a more direct approach to generate coverage data
-        printf("Trying alternative approach to generate coverage data...\n");
-        snprintf(gcov_command, sizeof(gcov_command),
-                 "cd %s && GCOV_OPTIONS=\"-b -c\" gcov %s.instrumented.gcda", source_dir, baseFileName);
-        gcov_result = system(gcov_command);
-
-        if (gcov_result != 0)
-        {
-            fprintf(stderr, "Warning: alternative gcov approach also failed (error code: %d)\n", gcov_result);
-        }
-        else
-        {
-            printf("Coverage data generated successfully using alternative approach.\n");
-        }
-    }
-    else
-    {
-        printf("Coverage data generated successfully.\n");
-    }
-
-    free(temp_path);
+    fprintf(stderr, "[Main] Fuzzing finished. Cleaning up...\n");
+    destroy_shared_memory();
+    cleanup_target(target_exe_path);
+    if (global_coverage_map)
+        free(global_coverage_map);
     free(fullPath);
+    free(temp_path_dir);
+    free(temp_path_base);
+    fprintf(stderr, "[Main] Cleanup complete. Exiting.\n");
     return 0;
 }
