@@ -23,6 +23,10 @@ int compile_target_with_clang_coverage(const char *sourceDir,
 int execute_target_fork(const char *exePath, int input, unsigned int timeout_ms);
 
 
+// Execute the instrumented target with an input file instead of stdin
+int execute_target_file(const char *exePath, const char *input_file, unsigned int timeout_ms);
+
+
 // Cleanup function (might remove compiled target)
 void cleanup_target(const char *exePath);
 

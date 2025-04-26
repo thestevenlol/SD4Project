@@ -25,6 +25,15 @@ typedef struct {
 extern shared_mem_t fuzz_shared_mem;
 extern volatile sig_atomic_t child_timed_out; // Flag for timeouts
 
+// Global coverage map accumulates all seen edges
+extern coverage_t global_cov_map[COVERAGE_MAP_SIZE];
+
+// Coverage evaluation helpers
+// Copy shared map to run_cov, count new edges and merge into global map
+int evaluate_coverage(void);
+// Merge a run's coverage into the global map without counting
+void merge_global_coverage(const coverage_t* run_cov);
+
 // Initialize shared memory for fuzzing
 int setup_shared_memory(void);
 
@@ -54,6 +63,10 @@ void dump_coverage_summary(const coverage_t* map);
 
 
 // --- Signal Handling ---
+
+// Save coverage on crash/timeouts for signal handlers
+void __coverage_save(void);
+
 // Generic signal handler (can be used for timeouts, etc.)
 void fuzzer_signal_handler(int sig);
 

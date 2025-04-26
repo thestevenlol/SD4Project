@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h> // For uint8_t
 #include "../headers/generational.h"
 #include "../headers/fuzz.h"
 #include "../headers/coverage.h" // For COVERAGE_MAP_SIZE, coverage_t, calculate_coverage_fitness
+#include "../headers/corpus.h"
 
 // Global population arrays (assuming these are defined/sized in generational.h or elsewhere)
 Individual *population = NULL;
@@ -184,5 +186,39 @@ void generateNewPopulation(Individual population[], int population_size, Individ
         // --- Assign child to the next generation ---
         next_generation[i] = child;
     }
-    fprintf(stderr, "[GA] New generation created.\n");
+    //fprintf(stderr, "[GA] New generation created.\n");
+}
+
+// Byte-level one-point crossover for TestCase data
+void tc_crossover(uint8_t *out, TestCase *p1, TestCase *p2) {
+    size_t len = p1->len < p2->len ? p1->len : p2->len;
+    size_t cp = rand() % len;
+    memcpy(out, p1->data, cp);
+    memcpy(out + cp, p2->data + cp, len - cp);
+}
+
+// Mutate a buffer of given length by random byte flips
+void tc_mutate(uint8_t *buf, size_t len) {
+    for (size_t i = 0; i < len; ++i) {
+        if ((double)rand() / RAND_MAX < MUTATION_RATE) {
+            buf[i] = (uint8_t)(rand() % 256);
+        }
+    }
+}
+
+// Create offspring TestCase by selecting parents, crossover and mutation
+void make_offspring(TestCase *child) {
+    TestCase *p1 = select_parent();
+    TestCase *p2 = select_parent();
+    if (!p1 || !p2) return;
+    // Determine child length based on first parent
+    child->len = p1->len;
+    // Allocate or reset coverage map
+    child->coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+    // Generate data
+    tc_crossover(child->data, p1, p2);
+    // Apply mutation
+    tc_mutate(child->data, child->len);
+    // Initialize fitness
+    child->fitness = 0;
 }

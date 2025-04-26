@@ -50,4 +50,24 @@ double getAverageCorpusFitness(void);
 // Print statistics about the corpus
 void printCorpusStats(void);
 
+
+// --- Genetic Algorithm Corpus (byte-based) ---
+#define MAX_TESTCASE_LEN 1024
+#define CORPUS_CAPACITY 1024
+
+// Structure for a test case (byte-based input)
+typedef struct {
+    uint8_t data[MAX_TESTCASE_LEN]; // Input buffer
+    size_t len;                     // Length of data
+    int fitness;                   // Number of new edges discovered
+    coverage_t* coverage_map;      // Coverage map for this run
+} TestCase;
+
+// Initialize GA corpus with initial seed
+void init_corpus(void);
+// Select a parent from the corpus (for crossover)
+TestCase* select_parent(void);
+// Add a test case to the corpus if fitness > 0 (replace worst if full)
+int add_to_corpus(const TestCase* tc);
+
 #endif // CORPUS_H

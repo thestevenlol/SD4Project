@@ -14,6 +14,11 @@
 shared_mem_t fuzz_shared_mem = { .shm_id = -1, .map = NULL };
 volatile sig_atomic_t child_timed_out = 0;
 
+// Global coverage map accumulates all seen edges
+coverage_t global_cov_map[COVERAGE_MAP_SIZE] = {0};
+
+// Alias for the shared coverage map written by the child
+#define shared_cov_map fuzz_shared_mem.map
 
 // Initialize shared memory for fuzzing
 int setup_shared_memory(void) {
@@ -157,6 +162,38 @@ void dump_coverage_summary(const coverage_t* map) {
            covered, COVERAGE_MAP_SIZE, density);
 }
 
+// Evaluate coverage: count new edges in shared_cov_map, merge into global_cov_map, return new edge count
+int evaluate_coverage(void) {
+    if (!shared_cov_map) return 0;
+    int new_edges = 0;
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (shared_cov_map[i] > 0 && global_cov_map[i] == 0) {
+            new_edges++;
+            global_cov_map[i] = 1;
+        }
+    }
+    return new_edges;
+}
+
+// Merge a run's coverage map into the global map without counting new edges
+void merge_global_coverage(const coverage_t* run_cov) {
+    if (!run_cov) return;
+    for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+        if (run_cov[i] > 0) {
+            global_cov_map[i] = 1;
+        }
+    }
+}
+
+// Stub for saving coverage on crashes/timeouts
+void __coverage_save(void) {
+    if (fuzz_shared_mem.map) {
+        // Merge current run's coverage into global map
+        for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
+            if (fuzz_shared_mem.map[i] > 0) global_cov_map[i] = 1;
+        }
+    }
+}
 
 // Generic signal handler
 void fuzzer_signal_handler(int sig) {

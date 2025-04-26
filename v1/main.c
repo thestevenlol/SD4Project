@@ -11,13 +11,13 @@
 #include <signal.h>
 #include <errno.h>
 
-#include "../headers/fuzz.h"
-#include "../headers/io.h"
-#include "../headers/testcase.h"
-#include "../headers/target.h"
-#include "../headers/generational.h"
-#include "../headers/corpus.h"
-#include "../headers/coverage.h"
+#include "headers/fuzz.h"
+#include "headers/io.h"
+#include "headers/testcase.h"
+#include "headers/target.h"
+#include "headers/generational.h"
+#include "headers/corpus.h"
+#include "headers/coverage.h"
 
 #define MAX_ITERATIONS 10000
 #define CORPUS_DIR "corpus"
@@ -31,6 +31,8 @@ int minRange = INT_MIN;
 int maxRange = INT_MAX;
 coverage_t *global_coverage_map = NULL;
 const char *target_exe_path_global = NULL; // Store path for signal handler
+int random_mode = 0;
+int genetic_mode = 0;
 
 // Function to save unique findings (crashes/timeouts)
 void save_finding(int input_val, const char *finding_type)
@@ -176,27 +178,17 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
         fprintf(progress_file, "Iteration,Coverage,Mode,CorpusSize,Crashes,Timeouts\n");
     }
 
-    fprintf(stderr, "[Main] Allocating global coverage map...\n");
-    global_coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
-    if (!global_coverage_map)
-    {
-        fprintf(stderr, "[Main] Error: Failed to allocate global coverage map\n");
-        if (progress_file)
-            fclose(progress_file);
-        return;
-    }
+    // Use static global_cov_map in coverage.c to track coverage
+    fprintf(stderr, "[Main] Using static global_cov_map for coverage tracking...\n");
 
     fprintf(stderr, "[Main] Initializing corpus...\n");
     if (initializeCorpus(CORPUS_DIR) != 0)
     {
         fprintf(stderr, "[Main] Error: Failed to initialize corpus\n");
-        free(global_coverage_map);
         if (progress_file)
             fclose(progress_file);
         return;
     }
-    fprintf(stderr, "[Main] Loading corpus...\n");
-    loadCorpus(CORPUS_DIR); // Try loading existing corpus
 
     fprintf(stderr, "[Main] Initializing populations...\n");
     initializePopulations();
@@ -207,10 +199,7 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
     fprintf(stderr, "[Main] Initializing population & evaluating initial inputs...\n");
     int initial_crashes = 0;
     int initial_timeouts = 0;
-    // If corpus was loaded, evaluate those first? Or just init population randomly?
-    // Let's init population randomly and add any initial corpus findings later if needed
-    for (int i = 0; i < POPULATION_SIZE; i++)
-    {
+    for (int i = 0; i < POPULATION_SIZE; i++) {
         long long range_size = (long long)max_r - min_r + 1;
         population[i].input_value = min_r;
         if (range_size > 0)
@@ -220,31 +209,16 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
 
         int status = execute_target_fork(target_exe, population[i].input_value, TARGET_TIMEOUT_MS);
 
-        if (fuzz_shared_mem.map)
-        {
-            memcpy(population[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE * sizeof(coverage_t));
-        }
-        else
-        {
-            memset(population[i].coverage_map, 0, COVERAGE_MAP_SIZE * sizeof(coverage_t));
-        }
+        // Evaluate coverage for this input
+        int new_edges = evaluate_coverage();
+        population[i].fitness_score = new_edges;
+        // Snapshot coverage map
+        if (fuzz_shared_mem.map) memcpy(population[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE);
+        else memset(population[i].coverage_map, 0, COVERAGE_MAP_SIZE);
 
-        population[i].fitness_score = calculate_coverage_fitness(population[i].coverage_map, global_coverage_map);
-
-        int new_cov = 0;
-        for (int k = 0; k < COVERAGE_MAP_SIZE; ++k)
-        {
-            if (population[i].coverage_map[k] > 0 && global_coverage_map[k] == 0)
-            {
-                new_cov = 1;
-                break;
-            }
-        }
-
-        if (new_cov)
-        {
-            update_global_coverage(population[i].coverage_map);
-            saveToCorpus(population[i].input_value, population[i].coverage_map, population[i].fitness_score, 1);
+        // If this input discovered new edges, add to corpus
+        if (new_edges > 0) {
+            saveToCorpus(population[i].input_value, fuzz_shared_mem.map, population[i].fitness_score, 1);
         }
 
         // Count initial crashes/timeouts from population seeding
@@ -259,6 +233,7 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
             save_finding(population[i].input_value, TIMEOUT_DIR);
         }
     }
+
     fprintf(stderr, "[Main] Population initialized. Initial corpus size: %d\n", getCorpusSize());
 
     if (progress_file)
@@ -275,6 +250,11 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
     fprintf(stderr, "[Main] Starting main fuzzing loop...\n");
     for (int iter = 1; iter <= iterations; iter++)
     { // Start iter from 1
+        // Status update per iteration
+        printf("[Main] Iteration %d/%d - Coverage: %d, Corpus: %d\n",
+               iter, iterations,
+               count_covered_edges(global_cov_map),
+               getCorpusSize());
 
         int input_val;
         int generated_new = 0; // Flag if *corpus* got a new entry this iteration
@@ -309,30 +289,18 @@ void greyBoxFuzzing(const char *target_exe, int iterations, int min_r, int max_r
         { // GA-based generation
 use_ga:
             generateNewPopulation(population, POPULATION_SIZE, next_generation, min_r, max_r);
-            for (int i = 0; i < POPULATION_SIZE; i++)
-            {
+            for (int i = 0; i < POPULATION_SIZE; i++) {
                 int status_ga = execute_target_fork(target_exe, next_generation[i].input_value, TARGET_TIMEOUT_MS);
-                if (fuzz_shared_mem.map)
-                    memcpy(next_generation[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE);
-                else
-                    memset(next_generation[i].coverage_map, 0, COVERAGE_MAP_SIZE);
-                next_generation[i].fitness_score = calculate_coverage_fitness(next_generation[i].coverage_map, global_coverage_map);
-
-                int new_cov_ga = 0;
-                for (int k = 0; k < COVERAGE_MAP_SIZE; ++k)
-                {
-                    if (next_generation[i].coverage_map[k] > 0 && global_coverage_map[k] == 0)
-                    {
-                        new_cov_ga = 1;
-                        break;
-                    }
-                }
-
-                if (new_cov_ga)
-                {
-                    update_global_coverage(next_generation[i].coverage_map);
-                    saveToCorpus(next_generation[i].input_value, next_generation[i].coverage_map, next_generation[i].fitness_score, 1);
-                    generated_new = 1; // Record that corpus grew
+                // Evaluate coverage and fitness
+                int new_edges_ga = evaluate_coverage();
+                next_generation[i].fitness_score = new_edges_ga;
+                // Snapshot coverage
+                if (fuzz_shared_mem.map) memcpy(next_generation[i].coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE);
+                else memset(next_generation[i].coverage_map, 0, COVERAGE_MAP_SIZE);
+                // If new edges discovered, record and add to corpus
+                if (new_edges_ga > 0) {
+                    saveToCorpus(next_generation[i].input_value, fuzz_shared_mem.map, new_edges_ga, 1);
+                    generated_new = 1;
                     last_corpus_update = iter;
                 }
                 // **FIX:** Check status codes correctly for GA runs
@@ -346,12 +314,7 @@ use_ga:
                     timeouts++;
                     save_finding(next_generation[i].input_value, TIMEOUT_DIR);
                 }
-                else if (status_ga > 0)
-                { /* Non-zero exit */
-                }
-                else if (status_ga == FUZZER_EXEC_ERROR)
-                { /* Fuzzer error */
-                }
+                // ...other status handling...
             }
             // Replace population
             for (int i = 0; i < POPULATION_SIZE; ++i)
@@ -372,24 +335,19 @@ use_ga:
         // --- Execute the chosen input ---
         int status = execute_target_fork(target_exe, input_val, TARGET_TIMEOUT_MS);
 
-        // --- Check results ---
-        int current_iter_new_cov = 0;
-        if (status != FUZZER_EXEC_ERROR && fuzz_shared_mem.map)
-        { // Check only if execution likely succeeded enough to get coverage
-            current_iter_new_cov = has_new_coverage(global_coverage_map);
+        // --- Check results for new coverage ---
+        if (status != FUZZER_EXEC_ERROR && fuzz_shared_mem.map) {
+            int new_edges = evaluate_coverage();
+            if (new_edges > 0) {
+                printf("+++ New coverage: %d new edges with input %d (Iteration: %d) +++\n", new_edges, input_val, iter);
+                saveToCorpus(input_val, fuzz_shared_mem.map, new_edges, 1);
+                generated_new = 1;
+                last_corpus_update = iter;
+            }
         }
 
-        if (current_iter_new_cov)
-        {
-            printf("+++ New coverage found with input: %d (Iteration: %d) +++\n", input_val, iter);
-            double fitness = calculate_coverage_fitness(fuzz_shared_mem.map, global_coverage_map);
-            update_global_coverage(global_coverage_map);
-            saveToCorpus(input_val, fuzz_shared_mem.map, fitness, 1);
-            generated_new = 1; // Record corpus growth
-            last_corpus_update = iter;
-        }
+        // --- Handle crashes/timeouts ---
 
-        // **FIX:** Handle crashes/timeouts for the main execution correctly
         if (status < 0 && status != -SIGALRM && status != FUZZER_EXEC_ERROR)
         { // Crash
             crashes++;
@@ -429,7 +387,7 @@ use_ga:
         // --- Periodic Actions ---
         if (iter % 100 == 0 || iter == iterations || generated_new)
         {
-            int current_total_coverage = count_covered_edges(global_coverage_map);
+            int current_total_coverage = count_covered_edges(global_cov_map);
             int corpus_s = getCorpusSize();
             printf("Iter %d: Total Cov %d, Corpus %d, Crashes %d, Timeouts %d\n",
                    iter, current_total_coverage, corpus_s, crashes, timeouts);
@@ -467,17 +425,20 @@ int main(int argc, char *argv[])
 {
     fprintf(stderr, "[Main] Fuzzer starting...\n");
     int opt;
-    int random_mode = 0;
     const char *filename = NULL;
 
     fprintf(stderr, "[Main] Parsing arguments...\n");
-    while ((opt = getopt(argc, argv, "ri:o:n:x:")) != -1)
+    while ((opt = getopt(argc, argv, "rgi:o:n:x:")) != -1)
     {
         switch (opt)
         {
         case 'r':
             random_mode = 1;
             fprintf(stderr, "[Main] Arg: Random mode enabled\n"); // Add log
+            break;
+        case 'g':
+            genetic_mode = 1;
+            fprintf(stderr, "[Main] Arg: Genetic mode enabled\n");
             break;
         case 'i':                                                               // Input target source file
             filename = optarg;                                                  // optarg contains the argument to -i
@@ -505,6 +466,11 @@ int main(int argc, char *argv[])
             return 1;
         }
     } // Keep options parsing
+
+    if (random_mode && genetic_mode) {
+        fprintf(stderr, "[Main] Warning: Both random and genetic modes enabled, defaulting to genetic mode\n");
+        random_mode = 0;
+    }
 
     if (!filename)
     {
@@ -571,13 +537,14 @@ int main(int argc, char *argv[])
     signal(SIGINT, graceful_shutdown);
     signal(SIGTERM, graceful_shutdown);
 
-    fprintf(stderr, "[Main] Starting fuzzing mode: %s\n", random_mode ? "Random" : "Grey Box");
     if (random_mode)
     {
+        fprintf(stderr, "[Main] Starting fuzzing mode: Random\n");
         randomFuzzing(target_exe_path, MAX_ITERATIONS, minRange, maxRange);
     }
-    else
+    else /* Genetic mode by default */
     {
+        fprintf(stderr, "[Main] Starting fuzzing mode: Genetic\n");
         greyBoxFuzzing(target_exe_path, MAX_ITERATIONS, minRange, maxRange);
     }
 

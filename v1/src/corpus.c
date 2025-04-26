@@ -13,6 +13,7 @@
 #include "../headers/corpus.h"
 #include "../headers/uthash.h" // Assuming this is still used
 #include "../headers/coverage.h" // For COVERAGE_MAP_SIZE, coverage_t
+#include "../headers/generational.h" // For TOURNAMENT_SIZE
 
 // Hash table entry for uthash
 typedef struct {
@@ -25,6 +26,65 @@ typedef struct {
 static CorpusHash* corpus_table = NULL;
 static int corpus_size = 0;
 static char corpus_directory[1024] = {0};
+
+// --- GA corpus implementation ---
+static TestCase ga_corpus[CORPUS_CAPACITY];
+static int ga_corpus_size = 0;
+
+void init_corpus(void) {
+    ga_corpus_size = 0;
+    // Seed with initial input "FUZZ"
+    TestCase seed;
+    seed.len = 4;
+    memcpy(seed.data, "FUZZ", 4);
+    seed.coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+    seed.fitness = 0;
+    if (seed.coverage_map) {
+        // Run initial coverage (map already zeroed)
+        reset_coverage_map();
+        // ...execute seed as needed before copying coverage...
+        memcpy(seed.coverage_map, fuzz_shared_mem.map, COVERAGE_MAP_SIZE);
+    }
+    ga_corpus[ga_corpus_size++] = seed;
+}
+
+TestCase* select_parent(void) {
+    if (ga_corpus_size == 0) return NULL;
+    int best = rand() % ga_corpus_size;
+    for (int i = 1; i < TOURNAMENT_SIZE && i < ga_corpus_size; ++i) {
+        int idx = rand() % ga_corpus_size;
+        if (ga_corpus[idx].fitness > ga_corpus[best].fitness) best = idx;
+    }
+    return &ga_corpus[best];
+}
+
+int add_to_corpus(const TestCase* tc) {
+    if (tc->fitness <= 0) return 0;
+    if (ga_corpus_size < CORPUS_CAPACITY) {
+        TestCase* slot = &ga_corpus[ga_corpus_size++];
+        memcpy(slot->data, tc->data, tc->len);
+        slot->len = tc->len;
+        slot->fitness = tc->fitness;
+        slot->coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+        memcpy(slot->coverage_map, tc->coverage_map, COVERAGE_MAP_SIZE);
+        return 1;
+    }
+    // Replace worst if full
+    int worst = 0;
+    for (int i = 1; i < ga_corpus_size; ++i) {
+        if (ga_corpus[i].fitness < ga_corpus[worst].fitness) worst = i;
+    }
+    if (tc->fitness > ga_corpus[worst].fitness) {
+        free(ga_corpus[worst].coverage_map);
+        memcpy(ga_corpus[worst].data, tc->data, tc->len);
+        ga_corpus[worst].len = tc->len;
+        ga_corpus[worst].fitness = tc->fitness;
+        ga_corpus[worst].coverage_map = calloc(COVERAGE_MAP_SIZE, sizeof(coverage_t));
+        memcpy(ga_corpus[worst].coverage_map, tc->coverage_map, COVERAGE_MAP_SIZE);
+        return 1;
+    }
+    return 0;
+}
 
 // Initialize corpus directory
 int initializeCorpus(const char* corpus_dir) {

@@ -18,6 +18,8 @@ char* insertCharIntoString(char* string, int length, char character);
 char* removeCharFromString(char* string, int length);
 
 // Advanced mutation functions
+// Mutate integer within specified range
+int mutateInteger(int original_value, int min_range, int max_range);
 int mutateArithmetic(int value); 
 int mutateDictionary(int value);
 int mutateHavoc(int value);  // Apply multiple random mutations

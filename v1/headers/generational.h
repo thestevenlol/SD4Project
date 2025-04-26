@@ -4,6 +4,7 @@
 
 #include <time.h>
 #include "coverage.h" // Include coverage.h to get coverage_t and COVERAGE_MAP_SIZE
+#include "corpus.h" // For TestCase
 
 // --- Configuration ---
 #define POPULATION_SIZE 100     // Number of individuals in the population
@@ -42,6 +43,14 @@ void generateNewPopulation(Individual population[], int population_size, Individ
 void resetIndividualCoverageMap(coverage_t* map);
 // **FIX:** Add const to match definition in generational.c
 int compareCoverageMaps(const coverage_t* map1, const coverage_t* map2);
+
+// --- Byte-level GA Operators ---
+// One-point crossover for TestCase data
+void tc_crossover(uint8_t *out, TestCase *p1, TestCase *p2);
+// Mutate a buffer of given length
+void tc_mutate(uint8_t *buf, size_t len);
+// Create offspring TestCase by selecting parents, crossover and mutation
+void make_offspring(TestCase *child);
 
 // --- Global Variables (Consider encapsulating or passing as params) ---
 extern Individual* population;
