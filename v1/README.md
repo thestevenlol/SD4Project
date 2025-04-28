@@ -55,7 +55,7 @@ sudo apt install flex
 
 ## Building the Fuzzer
 
-To build the fuzzer:
+To build the fuzzer (make sure you are in the v1/ directory!):
 
 ```
 make
