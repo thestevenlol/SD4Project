@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
     const char *filename = NULL;
 
     fprintf(stderr, "[Main] Parsing arguments...\n");
-    while ((opt = getopt(argc, argv, "rgi:o:n:x:")) != -1)
+    while ((opt = getopt(argc, argv, "rgn:i:o:n:x:")) != -1)
     {
         switch (opt)
         {
@@ -446,12 +446,12 @@ int main(int argc, char *argv[])
             break;
         // Add options for min/max range?
         case 'n':
-            // minRange = atoi(optarg); // Example if using -n
-            fprintf(stderr, "[Main] Arg: Option -n found with '%s'\n", optarg); // Add log
+            minRange = atoi(optarg); // Set minimum input value
+            fprintf(stderr, "[Main] Arg: minRange set to %d\n", minRange);
             break;
         case 'x':
-            // maxRange = atoi(optarg); // Example if using -x
-            fprintf(stderr, "[Main] Arg: Option -x found with '%s'\n", optarg); // Add log
+            maxRange = atoi(optarg); // Set maximum input value
+            fprintf(stderr, "[Main] Arg: maxRange set to %d\n", maxRange);
             break;
         case 'o':                                                               // Output directory? (unused for now)
             fprintf(stderr, "[Main] Arg: Option -o found with '%s'\n", optarg); // Add log

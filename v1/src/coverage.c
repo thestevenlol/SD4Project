@@ -165,6 +165,9 @@ void dump_coverage_summary(const coverage_t* map) {
 // Evaluate coverage: count new edges in shared_cov_map, merge into global_cov_map, return new edge count
 int evaluate_coverage(void) {
     if (!shared_cov_map) return 0;
+    // Debug: show how many edges the child hit in this run
+    // int shared_hits = count_covered_edges(shared_cov_map);
+    // fprintf(stderr, "[DBG] Shared run coverage edges: %d\n", shared_hits);
     int new_edges = 0;
     for (int i = 0; i < COVERAGE_MAP_SIZE; i++) {
         if (shared_cov_map[i] > 0 && global_cov_map[i] == 0) {
@@ -172,6 +175,7 @@ int evaluate_coverage(void) {
             global_cov_map[i] = 1;
         }
     }
+    // fprintf(stderr, "[DBG] New edges this run: %d\n", new_edges);
     return new_edges;
 }
 

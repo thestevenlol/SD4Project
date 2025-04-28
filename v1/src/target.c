@@ -54,11 +54,9 @@ return -1;
 // Construct full path for the output executable
 snprintf(outputFilePath, sizeof(outputFilePath), "%s/%s", sourceDir, outputExeName);
 
-// --- Build the Clang command using trace-cmp ---
-// Add -fsanitize-coverage=trace-cmp for compilation AND linking
-// Remove -fsanitize=address for now
+// --- Build the Clang command using both trace-pc-guard and trace-cmp ---
 snprintf(command, sizeof(command),
-"clang -g -fsanitize-coverage=trace-cmp -o \"%s\" \"%s\" \"%s\" -Wl,--no-as-needed -fsanitize-coverage=trace-cmp", // Use trace-cmp
+"clang -g -fsanitize-coverage=trace-pc-guard,trace-cmp -o \"%s\" \"%s\" \"%s\" -Wl,--no-as-needed -fsanitize-coverage=trace-pc-guard,trace-cmp",
 outputFilePath,
 sourceFilePath,
 runtimeFilePath);

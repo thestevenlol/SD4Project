@@ -96,12 +96,15 @@ void __sanitizer_cov_trace_pc_guard(uint32_t *guard) {
     __prev_loc = current_loc >> 1;
 }
 
-// Destructor function (optional, for cleanup)
-// void __attribute__((destructor)) coverage_fini() {
-//     if (__coverage_map_ptr != NULL && __coverage_map_ptr != (void*)-1) {
-//         shmdt(__coverage_map_ptr);
-//     }
-// }
+// Called on every comparison if trace-cmp instrumentation is enabled.
+// Records (Arg1 ^ Arg2) into the coverage map.
+void __sanitizer_cov_trace_cmp(uint64_t Arg1, uint64_t Arg2) {
+    if (!__coverage_map_ptr) return;
+    uint32_t idx = (uint32_t)((Arg1 ^ Arg2) % COVERAGE_MAP_SIZE);
+    if (__coverage_map_ptr[idx] < 255) {
+        __coverage_map_ptr[idx]++;
+    }
+}
 
 // Define __VERIFIER_nondet_int if the target needs it.
 // **IMPORTANT**: This makes the target non-deterministic based on fuzz input.

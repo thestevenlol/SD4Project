@@ -1,4 +1,4 @@
-extern int __VERIFIER_nondet_int();
+// extern int __VERIFIER_nondet_int();
 
 extern void __assert_fail (const char *__assertion, const char *__file,
       unsigned int __line, const char *__function)
@@ -1353,14 +1353,14 @@ void reach_error_99(){ reach_error_a(); }
 int main()
 {
     // main i/o-loop
-    while(1)
-    {
-        // read input
-        int input;
-        input = __VERIFIER_nondet_int();       
-        // operate eca engine
-        if((input != 5) && (input != 1) && (input != 3) && (input != 2) && (input != 4))
-            return -2;
-        calculate_output(input);
-    }
+	while(1)
+	{
+		// read input
+		int input;
+		scanf("%d", &input);       
+		// operate eca engine
+		if((input != 5) && (input != 1) && (input != 3) && (input != 2) && (input != 4))
+			return -2;
+		calculate_output(input);
+	}
 }

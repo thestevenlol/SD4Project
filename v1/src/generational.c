@@ -8,10 +8,9 @@
 #include "../headers/coverage.h" // For COVERAGE_MAP_SIZE, coverage_t, calculate_coverage_fitness
 #include "../headers/corpus.h"
 
-// Global population arrays (assuming these are defined/sized in generational.h or elsewhere)
+// Global population arrays 
 Individual *population = NULL;
 Individual *next_generation = NULL;
-// coverage_t* global_coverage_map = NULL; // Now managed in main.c
 int populationIndex = 0; // Use static if only used here?
 
 // Initialize memory for populations and their coverage maps
@@ -30,6 +29,7 @@ void initializePopulations(void)
     // Initialize coverage maps for each individual within the population structures
     for (int i = 0; i < POPULATION_SIZE; i++)
     {
+
 // Assuming Individual struct has 'coverage_map' field defined as:
 // coverage_t coverage_map[COVERAGE_MAP_SIZE]; OR coverage_t* coverage_map;
 #ifdef INDIVIDUAL_MAP_IS_POINTER
@@ -77,8 +77,6 @@ void cleanupPopulations(void)
     population = NULL;
     free(next_generation);
     next_generation = NULL;
-    // free(global_coverage_map); // Moved to main
-    // global_coverage_map = NULL;
 }
 
 // --- Functions operating on individual coverage maps ---
@@ -139,7 +137,7 @@ void generateNewPopulation(Individual population[], int population_size, Individ
         child.fitness_score = 0.0;
         child.timestamp = time(NULL); // Set timestamp
 #ifdef INDIVIDUAL_MAP_IS_POINTER
-        child.coverage_map = NULL; // *** THIS LINE IS CRUCIAL AND WAS MISSING ***
+        child.coverage_map = NULL; 
 #endif
 
         // --- Crossover or Mutation ---
@@ -174,8 +172,8 @@ void generateNewPopulation(Individual population[], int population_size, Individ
              // but if it did, reset the existing map.
              resetIndividualCoverageMap(child.coverage_map);
         }
-        // If you want to be absolutely sure it's zeroed AFTER allocation check:
-        // resetIndividualCoverageMap(child.coverage_map); // Call it here if preferred
+        // If we want to be absolutely sure it's zeroed AFTER allocation check:
+        // resetIndividualCoverageMap(child.coverage_map); 
 
 #else // coverage_map is an array member
         // Just reset the array contents
